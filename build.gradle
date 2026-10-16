@@ -1,4 +1,7 @@
-plugins { id 'com.android.application' version '8.13.2' }
+plugins {
+    id 'com.android.application' version '8.13.2'
+    id 'org.jetbrains.kotlin.android' version '2.4.21'
+}
 
 android {
     namespace 'game.truthordare'
@@ -7,8 +10,8 @@ android {
         applicationId 'game.truthordare'
         minSdk 24
         targetSdk 36
-        versionCode 55
-        versionName '0.2.9.37'
+        versionCode 56
+        versionName '0.2.9.38-kotlin-preview'
     }
     signingConfigs {
         release {
@@ -19,29 +22,12 @@ android {
         }
     }
     buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 
 dependencies {
     implementation 'com.android.billingclient:billing:9.1.0'
-    implementation 'androidx.activity:activity:1.10.1'
-    implementation 'androidx.core:core:1.15.0'
-    implementation 'androidx.fragment:fragment:1.8.6'
+    implementation 'androidx.activity:activity-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.fragment:fragment-ktx:1.8.6'
 }
-
-configurations.configureEach {
-    resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22',
-        'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22',
-        'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-}
-
-
-
-
-
-
-
-

@@ -1,9 +1,15 @@
+# Android / Gradle
 .gradle/
+.kotlin/
 build/
 local.properties
-*.iml
-.idea/
-*.jks
-*.keystore
 *.apk
 *.aab
+
+# IDE
+.idea/
+*.iml
+
+# Signing
+*.jks
+*.keystore

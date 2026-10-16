@@ -1,22 +1,19 @@
-# Truth or Dare
+# Truth or Dare — Kotlin Android app
 
-Native Android Truth or Dare game, written in Java.
+The Kotlin rewrite of the Truth or Dare Android app.
 
-## Open and build
+## Requirements
 
-1. Open this folder in Android Studio.
-2. Install Android SDK Platform 36 when prompted.
-3. Use JDK 17.
-4. Run the `assembleDebug` Gradle task or select **Run** in Android Studio.
+- JDK 17
+- Android SDK with API 36
+- Gradle 8.13+
 
-The project has no signing key in this repository. Configure your own release signing key before publishing a release build.
+## Build
 
-## Project layout
+```bash
+gradle assembleDebug
+```
 
-- `src/main/java/app/truthordare/MainActivity.java` — application UI and game logic
-- `src/main/res` — icons, themes, and visual resources
-- `src/main/AndroidManifest.xml` — app manifest and SDK configuration
+For a signed release, provide the release keystore and set `TORD_STORE_PASSWORD` before running `gradle assembleRelease` or `gradle bundleRelease`.
 
-## License
-
-All rights reserved unless you add a license file.
+The app source is in `src/main/kotlin/game/truthordare/MainActivity.kt` and its prompt deck is in `src/main/assets/truth_or_dare_prompts.json`.

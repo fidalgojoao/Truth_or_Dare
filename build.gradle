@@ -1,0 +1,47 @@
+plugins { id 'com.android.application' version '8.13.2' }
+
+android {
+    namespace 'game.truthordare'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'game.truthordare'
+        minSdk 24
+        targetSdk 36
+        versionCode 52
+        versionName '0.2.9.34'
+    }
+    signingConfigs {
+        release {
+            storeFile file('../../outputs/Truth-or-Dare-upload-key.jks')
+            storePassword System.getenv('TORD_STORE_PASSWORD')
+            keyAlias 'truthordareupload'
+            keyPassword System.getenv('TORD_STORE_PASSWORD')
+        }
+    }
+    buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.android.billingclient:billing:9.1.0'
+    implementation 'androidx.activity:activity:1.10.1'
+    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.fragment:fragment:1.8.6'
+}
+
+configurations.configureEach {
+    resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22',
+        'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22',
+        'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+}
+
+
+
+
+
+
+
+

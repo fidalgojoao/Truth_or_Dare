@@ -1,0 +1,2 @@
+# Set this to the location of your Android SDK.
+sdk.dir=/path/to/Android/Sdk

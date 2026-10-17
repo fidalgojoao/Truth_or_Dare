@@ -253,13 +253,18 @@ class MainActivity : ComponentActivity() {
         playersPanel.addView(label("PLAYERS: ${players.size}",13,true,muted))
         playersPanel.addView(label("Add everyone, then edit their interaction preferences any time.",15,false,muted).apply { setPadding(0,dp(8),0,dp(8)) })
         if(players.size<2) playersPanel.addView(label(if(players.isEmpty()) "No players added yet. Add at least 2 players to start the game." else "Add 1 more player to start the game.",14,true,accent).apply { setPadding(0,0,0,dp(10)); setLineSpacing(dp(2).toFloat(),1.03f) })
+        val playerGrid=GridLayout(this).apply { columnCount=2; useDefaultMargins=false }
         players.forEachIndexed { index, p ->
-            val row=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(15),dp(11),dp(12),dp(11)); background=shape(surface,16,1) }
+            val row=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),dp(8),dp(8),dp(8)); background=shape(surface,16,1) }
             val info=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
-            info.addView(label(p.name,17,true)); info.addView(label("${p.gender} · ${p.preference}",12,false,muted)); row.addView(info,weight(1f))
-            row.addView(button("Edit",accent,onAccent()){editPlayer(index)},lp(dp(92),dp(48),0))
-            playersPanel.addView(row,lp(-1,-2,4))
+            info.addView(label(p.name,13,true).apply { textSize=13.65f; maxLines=2; ellipsize=android.text.TextUtils.TruncateAt.END })
+            info.addView(label("${p.gender} · ${p.preference}",10,false,muted).apply { maxLines=1; ellipsize=android.text.TextUtils.TruncateAt.END; setPadding(0,dp(3),0,0) })
+            row.addView(info,weight(1f))
+            row.addView(cardAction(R.drawable.ic_edit,"Edit ${p.name}"){editPlayer(index)},LinearLayout.LayoutParams(dp(42),dp(42)).apply { leftMargin=dp(4) })
+            val position=playerGrid.childCount
+            playerGrid.addView(row,GridLayout.LayoutParams().apply { width=0;height=dp(74);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(position%2==0)0 else dp(4);val right=if(position%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) })
         }
+        playersPanel.addView(playerGrid,lp(-1,-2,0))
         playersPanel.addView(add,lp(-1,dp(52),7))
 
         divider(root,15)
@@ -303,14 +308,16 @@ class MainActivity : ComponentActivity() {
     private fun showSettings() {
         val root=base(); title(root,"Settings")
         divider(root,7)
-        settingsRow(root,"wallpaper","Appearance","Themes, colors, and visual style",{openScreen("appearance"){showAppearance()}})
-        settingsRow(root,"gameplay","Gameplay","Rules and play preferences",{openScreen("gameplay"){showGameplay()}})
-        settingsRow(root,"ⓘ","About app","Privacy policy, game rules, and app information",{openScreen("about"){showAbout()}})
+        settingsRow(root,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}})
+        settingsRow(root,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}})
+        settingsRow(root,"about","About app","Privacy, rules, info",{openScreen("about"){showAbout()}})
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,showArrow:Boolean=true){
-        val c=card(root,2).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
-        val iconHolder=FrameLayout(this).apply { background=shape(accent,24) }
-        if(icon=="wallpaper" || icon=="gameplay") iconHolder.addView(ImageView(this).apply { setImageResource(if(icon=="wallpaper") R.drawable.ic_wallpaper else R.drawable.ic_gameplay); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
-        else iconHolder.addView(label(icon,18,true,onAccent(),Gravity.CENTER),FrameLayout.LayoutParams(-1,-1))
+        val c=card(root,8).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
+        val iconBackground=when(icon){ "appearance"->Color.rgb(54,31,99); "gameplay"->Color.rgb(20,62,92); "about"->Color.rgb(89,18,70); else->accent }
+        val iconForeground=when(icon){ "appearance"->Color.rgb(190,164,255); "gameplay"->Color.rgb(66,196,255); "about"->Color.rgb(255,141,207); else->onAccent() }
+        val iconRes=when(icon){ "appearance"->R.drawable.ic_wallpaper; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
+        val iconHolder=FrameLayout(this).apply { background=shape(iconBackground,24) }
+        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))

@@ -148,7 +148,7 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = !isDark()
         }
     }
-    private fun base(scroll: Boolean = true, dock: View? = null, dockFollowsIme: Boolean = true): LinearLayout {
+    private fun base(scroll: Boolean = true, dock: View? = null, dockFollowsIme: Boolean = true, dockMargin: Int = 20): LinearLayout {
         prepareWindow()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
             val frame = FrameLayout(this).apply {
                 setBackgroundColor(this@MainActivity.background)
                 addView(sv, FrameLayout.LayoutParams(-1, -1))
-                addView(dock, FrameLayout.LayoutParams(-1, dockHeight, Gravity.BOTTOM).apply { setMargins(dp(20), 0, dp(20), 0) })
+                addView(dock, FrameLayout.LayoutParams(-1, dockHeight, Gravity.BOTTOM).apply { setMargins(dp(dockMargin), 0, dp(dockMargin), 0) })
             }
             ViewCompat.setOnApplyWindowInsetsListener(frame) { _, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -195,8 +195,8 @@ class MainActivity : ComponentActivity() {
     }
     private fun backButton(action: () -> Unit): ImageButton = ImageButton(this).apply {
         setImageResource(R.drawable.ic_back)
-        setColorFilter(onAccent(), android.graphics.PorterDuff.Mode.SRC_IN)
-        background = shape(softAccent, 23)
+        setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN)
+        background = shape(accent, 23)
         setPadding(dp(11), dp(11), dp(11), dp(11))
         contentDescription = "Back"
         setOnClickListener { action() }
@@ -221,7 +221,7 @@ class MainActivity : ComponentActivity() {
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); saveState(); editPlayer(players.lastIndex) } },lp(dp(120),dp(52),0))
         val root=base(dock=play,dockFollowsIme=false)
         val brand=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(10),dp(10),dp(10)); background=shape(surface,30,1) }
-        val mark=ImageView(this).apply { setImageResource(resources.getIdentifier("ic_launcher","drawable",packageName)) }
+        val mark=ImageView(this).apply { setImageResource(resources.getIdentifier("ic_launcher","drawable",packageName)); setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN) }
         brand.addView(mark,lp(dp(36),dp(36),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER_VERTICAL; setPadding(dp(10),0,0,0) }
         copy.addView(label("Truth or Dare",18,true))
@@ -276,35 +276,37 @@ class MainActivity : ComponentActivity() {
         form.addView(label("Name",12,true).apply { setPadding(0,0,0,dp(7)) })
         val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;minHeight=dp(52);background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)}
         form.addView(name,lp(-1,dp(52),0))
-        fun selectedButtons(values:List<String>,initial:String,columns:Int=1):Pair<ViewGroup,()->String>{var selected=initial;val host=if(columns==1)LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}else GridLayout(this).apply{columnCount=2};val buttons=mutableListOf<TextView>();values.forEachIndexed{i,value->val b=button(value,if(value==selected)accent else surface,if(value==selected)onAccent() else ink){};b.textSize=13f;b.minHeight=dp(48);b.background=shape(if(value==selected)accent else surface,22,1);b.setOnClickListener{selected=value;buttons.forEach{item->val active=item.text.toString()==value;item.setTextColor(if(active)onAccent()else ink);item.background=shape(if(active)accent else surface,22,1)}};buttons.add(b);if(host is LinearLayout){host.addView(b,LinearLayout.LayoutParams(0,dp(48),1f).apply{if(i<values.lastIndex)setMargins(0,0,dp(7),0)})}else{host.addView(b,GridLayout.LayoutParams().apply{width=0;height=dp(48);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);setMargins(if(i%2==0)0 else dp(4),dp(2),if(i%2==0)dp(4)else 0,dp(2))})}};return host to {selected}}
+        fun selectedButtons(values:List<String>,initial:String,columns:Int=1,onChanged:(String)->Unit={}):Pair<ViewGroup,()->String>{var selected=initial;val host=if(columns==1)LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}else GridLayout(this).apply{columnCount=2};val buttons=mutableListOf<TextView>();values.forEachIndexed{i,value->val b=button(value,if(value==selected)accent else surface,if(value==selected)onAccent() else ink){};b.textSize=13f;b.minHeight=dp(48);b.background=shape(if(value==selected)accent else surface,22,1);b.setOnClickListener{selected=value;buttons.forEach{item->val active=item.text.toString()==value;item.setTextColor(if(active)onAccent()else ink);item.background=shape(if(active)accent else surface,22,1)};onChanged(selected)};buttons.add(b);if(host is LinearLayout){host.addView(b,LinearLayout.LayoutParams(0,dp(48),1f).apply{if(i<values.lastIndex)setMargins(0,0,dp(7),0)})}else{host.addView(b,GridLayout.LayoutParams().apply{width=0;height=dp(48);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);setMargins(if(i%2==0)0 else dp(4),dp(2),if(i%2==0)dp(4)else 0,dp(2))})}};return host to {selected}}
         form.addView(label("Gender",12,true).apply { setPadding(0,dp(16),0,dp(7)) })
         val(genderView,getGender)=selectedButtons(listOf("Man","Woman","Other"),player.gender)
         form.addView(genderView,lp(-1,-2,0))
         form.addView(label("Wants to interact with",12,true).apply { setPadding(0,dp(16),0,dp(7)) })
-        val(prefView,getPref)=selectedButtons(listOf("Men","Women","Men & women","Specific players"),player.preference,2)
+        val targetRefreshers=mutableListOf<()->Unit>()
+        val(prefView,getPref)=selectedButtons(listOf("Men","Women","Men & women","Specific players"),player.preference,2){ targetRefreshers.forEach { it() } }
         form.addView(prefView,lp(-1,-2,0))
         form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(16),0,dp(7))})
         val specificPlayers=player.specificPlayers.toMutableSet()
         players.filterIndexed{ i,_ -> i!=index }.forEach{p->
             val target=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; background=shape(surface,14,1); setPadding(dp(10),dp(8),dp(12),dp(8)); isClickable=true }
             val check=CheckBox(this).apply { buttonTintList=android.content.res.ColorStateList.valueOf(accent); minWidth=dp(40); minHeight=dp(40); isClickable=false }
-            val copy=label("${p.name}  ·  ${p.gender}",13,false,ink)
+            val copy=label("${p.name}  ·  ${p.gender}",13,true,ink)
             target.addView(check,lp(dp(40),dp(40),0)); target.addView(copy,weight(1f))
-            fun refreshTarget(){ val checked=specificPlayers.contains(p.name); check.isChecked=checked; copy.setTextColor(if(checked)accent else ink) }
-            target.setOnClickListener { if(specificPlayers.contains(p.name)) specificPlayers.remove(p.name) else specificPlayers.add(p.name); refreshTarget() }
-            refreshTarget(); form.addView(target,lp(-1,-2,3))
+            fun refreshTarget(){ val enabled=getPref()=="Specific players"; val checked=specificPlayers.contains(p.name); check.isChecked=checked; target.isEnabled=enabled; target.alpha=if(enabled)1f else .38f; copy.setTextColor(if(enabled&&checked)accent else if(enabled)ink else muted) }
+            target.setOnClickListener { if(getPref()=="Specific players"){ if(specificPlayers.contains(p.name)) specificPlayers.remove(p.name) else specificPlayers.add(p.name); refreshTarget() } }
+            targetRefreshers.add(::refreshTarget); refreshTarget(); form.addView(target,lp(-1,-2,3))
         }
-        val actions=LinearLayout(this).apply{gravity=Gravity.CENTER;setPadding(0,dp(14),0,0)};actions.addView(button("Remove player",accent,onAccent()){players.removeAt(index);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{setMargins(0,0,dp(6),0)});actions.addView(button("Save player",accent,onAccent()){player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.specificPlayers.clear();player.specificPlayers.addAll(specificPlayers);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{setMargins(dp(6),0,0,0)});form.addView(actions,lp(-1,-2,0));dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),-2);attributes=attributes.apply{dimAmount=.40f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
+        targetRefreshers.forEach { it() }
+        val actions=LinearLayout(this).apply{gravity=Gravity.CENTER;setPadding(0,dp(14),0,0)};actions.addView(button("Remove player",accent,onAccent()){players.removeAt(index);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{setMargins(0,0,dp(6),0)});actions.addView(button("Save player",accent,onAccent()){player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.specificPlayers.clear();player.specificPlayers.addAll(specificPlayers);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{setMargins(dp(6),0,0,0)});form.addView(actions,lp(-1,-2,0));dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),-2);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.40f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
     }    private fun findRadio(group:RadioGroup):String { val id=group.checkedRadioButtonId; return group.findViewById<RadioButton>(id)?.text?.toString() ?: "Other" }
 
     private fun showSettings() {
         val root=base(); title(root,"Settings")
-        divider(root,14)
+        divider(root,7)
         settingsRow(root,"wallpaper","Appearance","Themes, colors, and visual style",{openScreen("appearance"){showAppearance()}})
         settingsRow(root,"◆","Gameplay","Rules and play preferences",{openScreen("gameplay"){showGameplay()}})
         settingsRow(root,"ⓘ","About app","Privacy policy, game rules, and app information",{openScreen("about"){showAbout()}})
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,showArrow:Boolean=true){
-        val c=card(root,4).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
+        val c=card(root,2).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
         val iconHolder=FrameLayout(this).apply { background=shape(accent,24) }
         if(icon=="wallpaper") iconHolder.addView(ImageView(this).apply { setImageResource(R.drawable.ic_wallpaper); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); contentDescription="Appearance" },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
         else iconHolder.addView(label(icon,18,true,onAccent(),Gravity.CENTER),FrameLayout.LayoutParams(-1,-1))
@@ -364,7 +366,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showAbout(){
         val root=base(); title(root,"About app")
-        divider(root,14)
+        divider(root,7)
         settingsRow(root,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},false)
         settingsRow(root,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},false)
         settingsRow(root,"✦","About Truth or Dare","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},false)
@@ -382,7 +384,7 @@ class MainActivity : ComponentActivity() {
     private fun showGameRules(){ informationPage("Game rules","• Add at least two players and set each player's gender and interaction preferences.\n\n• A player is chosen at random. The same player cannot be chosen twice in a row; with four or more players, everyone is selected before anyone repeats.\n\n• Choose Truth or Dare. After two Truth choices in a row, that player must choose Dare next time.\n\n• Targeted prompts follow the active player's saved preference: Men, Women, Men & women, or only their selected specific players.\n\n• Every prompt can be passed or skipped. Keep the game respectful, consensual, and free of physical harm.") }
     private fun privacyText():String = "Effective date: 15 October 2026\n\nTruth or Dare is designed to work locally on your device. The app stores player names, preferences, selected level, custom cards, and game progress only in local app storage so your group can resume later.\n\nWe do not collect, sell, share, or transmit personal information. We do not use advertising, analytics, accounts, location, contacts, camera, microphone, nearby devices, or Bluetooth.\n\nGoogle Play Billing is used only when you choose to buy the optional Premium Levels one-time product. Google processes payment information under its own privacy policy; this app does not receive or store payment card details.\n\nYou can delete local game information at any time by clearing the app's storage or uninstalling the app.\n\nIf this policy changes, the updated version will be included in the app and release notes."
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
-    private fun showAppInformation(){ informationPage("About app","App version\n0.3.2\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
+    private fun showAppInformation(){ informationPage("About app","App version\n0.3.3\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(18),dp(18),dp(18),dp(18)) }
@@ -466,15 +468,14 @@ class MainActivity : ComponentActivity() {
     private fun ValueAnimator.doOnEnd(action:()->Unit) { addListener(object:android.animation.AnimatorListenerAdapter(){ override fun onAnimationEnd(animation:android.animation.Animator){ action() } }) }
     private fun showChoices(){
         val root=base(); val player=players[turn%players.size]; val truthAllowed=!(limitTruths&&player.truthStreak>=truthLimit)
-        val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(10),dp(6),dp(10),dp(6)) }
-        header.addView(backButton { goBack() },lp(dp(46),dp(46),0))
-        val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(12),0,dp(8),0) }
-        copy.addView(label("ROUND $round",10,true,accent))
-        copy.addView(label("${player.name}'s turn",21,true,ink).apply { maxLines=1; ellipsize=android.text.TextUtils.TruncateAt.END })
-        header.addView(copy,weight(1f))
-        header.addView(label("TRUTH OR DARE",9,true,muted,Gravity.CENTER).apply { background=shape(surface,14,1); setPadding(dp(9),dp(6),dp(9),dp(6)) },lp(-2,dp(32),0))
+        val header=FrameLayout(this).apply { setPadding(dp(10),dp(6),dp(10),dp(6)) }
+        header.addView(backButton { goBack() },FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL))
+        val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER }
+        copy.addView(label("ROUND $round",10,true,accent,Gravity.CENTER))
+        copy.addView(label("${player.name}'s turn",21,true,ink,Gravity.CENTER).apply { maxLines=1; ellipsize=android.text.TextUtils.TruncateAt.END })
+        header.addView(copy,FrameLayout.LayoutParams(-1,dp(52),Gravity.CENTER))
         root.addView(header,lp(-1,dp(58),0))
-        root.addView(label(if(truthAllowed)"Choose your move" else "Truth is locked this turn — choose Dare to continue.",17,false,if(truthAllowed)muted else accent,Gravity.CENTER).apply { setPadding(0,dp(14),0,dp(8)) })
+        root.addView(label("Choose your move",17,false,muted,Gravity.CENTER).apply { setPadding(0,dp(14),0,dp(8)) })
         val truth=button("✦\nTRUTH\nBe honest",if(truthAllowed)softAccent else ColorUtils.blendARGB(surface,outline,.65f),if(truthAllowed)ink else muted){if(truthAllowed)openScreen("card"){showCard(nextCard("truth"))}}.apply { textSize=22f; isEnabled=truthAllowed; alpha=if(truthAllowed)1f else .55f; minHeight=dp(170) }
         root.addView(truth,lp(-1,dp(275),16))
         val dare=button("⚡\nDARE\nTake the challenge",accent,onAccent()){openScreen("card"){showCard(nextCard("dare"))}}.apply { textSize=22f; minHeight=dp(170) }
@@ -498,10 +499,10 @@ class MainActivity : ComponentActivity() {
         val canChooseAgain=!(limitTruths&&player.truthStreak>=truthLimit)
         val dock=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         if(canChooseAgain) {
-            dock.addView(button("Choose\nagain",softAccent,ink){ activeTimer?.cancel(); currentScreen="choices"; showChoices() }.apply { textSize=12f; minHeight=dp(66) },LinearLayout.LayoutParams(0,dp(66),.20f).apply { rightMargin=dp(6) })
-            dock.addView(next,LinearLayout.LayoutParams(0,dp(66),.80f))
+            dock.addView(button("Choose\nagain",softAccent,ink){ activeTimer?.cancel(); currentScreen="choices"; showChoices() }.apply { textSize=12f; minHeight=dp(66) },LinearLayout.LayoutParams(0,dp(66),.35f).apply { rightMargin=dp(1) })
+            dock.addView(next,LinearLayout.LayoutParams(0,dp(66),.65f))
         } else dock.addView(next,LinearLayout.LayoutParams(-1,dp(66)))
-        val root=base(dock=dock)
+        val root=base(dock=dock,dockMargin=14)
         title(root,if(card.kind=="truth")"Truth time" else "Dare time")
         val display=renderPrompt(card.text,player)
         val c=card(root,10).apply { gravity=Gravity.CENTER; minimumHeight=dp(680); setPadding(dp(18),dp(18),dp(18),dp(18)) }

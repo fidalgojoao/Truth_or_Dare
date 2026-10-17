@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:node="remove" />
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
     <application android:label="Truth or Dare" android:theme="@style/AppTheme" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">

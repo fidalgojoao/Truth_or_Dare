@@ -5,6 +5,9 @@ import android.os.*
 import android.content.*
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.view.*
 import android.view.Gravity
@@ -21,7 +24,10 @@ import androidx.core.view.WindowInsetsCompat
 import org.json.JSONObject
 import java.util.Locale
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.random.Random
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
 import com.android.billingclient.api.*
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +42,8 @@ class MainActivity : ComponentActivity() {
     private var premium = false
     private var round = 1
     private var turn = 0
+    private val remainingTurnIndices = mutableSetOf<Int>()
+    private var hasActiveTurn = false
     private var activeTimer: CountDownTimer? = null
     private var currentCard: Card? = null
     private var homeScrollY = 0
@@ -66,6 +74,7 @@ class MainActivity : ComponentActivity() {
             "privacy" -> showPrivacyPolicy()
             "appInfo" -> showAppInformation()
             "choices" -> showChoices()
+            "spinner" -> showHome()
             "card" -> currentCard?.let { showCard(it) } ?: showChoices()
             "custom" -> showCustomCards()
             "manage" -> manageCards()
@@ -195,7 +204,7 @@ class MainActivity : ComponentActivity() {
     private fun applyThemeAndHome() { showHome() }
     private fun showHome() {
         activeTimer?.cancel()
-        val play=button("Let's play  →",accent,onAccent()){if(players.size>=2)openScreen("choices"){showChoices()}}.apply { textSize=20f; minHeight=dp(66); isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
+        val play=button("Let's play  →",accent,onAccent()){if(players.size>=2){ round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} }}.apply { textSize=20f; minHeight=dp(66); isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
         val input=EditText(this).apply { hint="Player name"; textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
         val add=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); saveState(); editPlayer(players.lastIndex) } },lp(dp(120),dp(52),0))
@@ -239,7 +248,7 @@ class MainActivity : ComponentActivity() {
         val customSelected=selectedLevel=="mydares"
         val lockedFill=ColorUtils.blendARGB(surface,outline,.55f)
         val custom=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; isClickable=true; background=shape(if(customSelected)accent else if(customLocked)lockedFill else surface,22,1); setOnClickListener { if(customLocked)showPremium() else {selectedLevel="mydares";openScreen("custom"){showCustomCards()}} } }
-        custom.addView(label("My truths and dares ✏",13,true,if(customSelected)onAccent() else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
+        custom.addView(label("My truths and dares ✏️",13,true,if(customSelected)onAccent() else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
         custom.addView(label(if(customLocked)"Premium  🔒" else "Your custom cards",11,false,if(customSelected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
         grid.addView(custom,GridLayout.LayoutParams().apply{width=-1;height=dp(66);columnSpec=GridLayout.spec(0,2);setMargins(0,dp(2),0,dp(2))});levels.addView(grid)
         if(!premium) root.addView(label("Hard, Extreme and My truths and dares unlock with a one-time Play purchase.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0))
@@ -251,9 +260,18 @@ class MainActivity : ComponentActivity() {
         top.addView(close,FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(label("Edit player",18,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER))
         form.addView(top,lp(-1,dp(46),0))
-        form.addView(label("You can change this later, including who they want to interact with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(16))});form.addView(label("Name",12,true));val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;minHeight=dp(52);background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)};form.addView(name,lp(-1,dp(52),0))
+        form.addView(label("You can change this later, including who they want to interact with.",12,false,muted).apply{setPadding(0,dp(10),0,dp(20))})
+        form.addView(label("Name",12,true).apply { setPadding(0,0,0,dp(7)) })
+        val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;minHeight=dp(52);background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)}
+        form.addView(name,lp(-1,dp(52),0))
         fun selectedButtons(values:List<String>,initial:String,columns:Int=1):Pair<ViewGroup,()->String>{var selected=initial;val host=if(columns==1)LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}else GridLayout(this).apply{columnCount=2};val buttons=mutableListOf<TextView>();values.forEachIndexed{i,value->val b=button(value,if(value==selected)accent else surface,if(value==selected)onAccent() else ink){};b.textSize=13f;b.minHeight=dp(48);b.background=shape(if(value==selected)accent else surface,22,1);b.setOnClickListener{selected=value;buttons.forEach{item->val active=item.text.toString()==value;item.setTextColor(if(active)onAccent()else ink);item.background=shape(if(active)accent else surface,22,1)}};buttons.add(b);if(host is LinearLayout){host.addView(b,LinearLayout.LayoutParams(0,dp(48),1f).apply{if(i<values.lastIndex)setMargins(0,0,dp(7),0)})}else{host.addView(b,GridLayout.LayoutParams().apply{width=0;height=dp(48);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);setMargins(if(i%2==0)0 else dp(4),dp(2),if(i%2==0)dp(4)else 0,dp(2))})}};return host to {selected}}
-        form.addView(label("Gender",12,true));val(genderView,getGender)=selectedButtons(listOf("Man","Woman","Other"),player.gender);form.addView(genderView,lp(-1,-2,0));form.addView(label("Wants to interact with",12,true));val(prefView,getPref)=selectedButtons(listOf("Men","Women","Men & women","Specific players"),player.preference,2);form.addView(prefView,lp(-1,-2,0));form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(10),0,dp(4))})
+        form.addView(label("Gender",12,true).apply { setPadding(0,dp(16),0,dp(7)) })
+        val(genderView,getGender)=selectedButtons(listOf("Man","Woman","Other"),player.gender)
+        form.addView(genderView,lp(-1,-2,0))
+        form.addView(label("Wants to interact with",12,true).apply { setPadding(0,dp(16),0,dp(7)) })
+        val(prefView,getPref)=selectedButtons(listOf("Men","Women","Men & women","Specific players"),player.preference,2)
+        form.addView(prefView,lp(-1,-2,0))
+        form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(16),0,dp(7))})
         val specificPlayers=player.specificPlayers.toMutableSet()
         players.filterIndexed{ i,_ -> i!=index }.forEach{p->
             val target=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; background=shape(surface,14,1); setPadding(dp(10),dp(8),dp(12),dp(8)); isClickable=true }
@@ -275,9 +293,9 @@ class MainActivity : ComponentActivity() {
         settingsRow(root,"ⓘ","About app","Privacy policy, game rules, and app information",{openScreen("about"){showAbout()}})
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,showArrow:Boolean=true){
         val c=card(root,4).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
-        val iconHolder=FrameLayout(this).apply { background=shape(ColorUtils.blendARGB(accent,surface,.22f),24,1,ColorUtils.setAlphaComponent(accent,150)) }
-        if(icon=="wallpaper") iconHolder.addView(ImageView(this).apply { setImageResource(R.drawable.ic_wallpaper); setColorFilter(ink,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription="Appearance" },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
-        else iconHolder.addView(label(icon,18,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,-1))
+        val iconHolder=FrameLayout(this).apply { background=shape(accent,24) }
+        if(icon=="wallpaper") iconHolder.addView(ImageView(this).apply { setImageResource(R.drawable.ic_wallpaper); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); contentDescription="Appearance" },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
+        else iconHolder.addView(label(icon,18,true,onAccent(),Gravity.CENTER),FrameLayout.LayoutParams(-1,-1))
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
@@ -320,6 +338,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showAbout(){
         val root=base(); title(root,"About app")
+        divider(root,14)
         settingsRow(root,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},false)
         settingsRow(root,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},false)
         settingsRow(root,"✦","About Truth or Dare","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},false)
@@ -329,15 +348,15 @@ class MainActivity : ComponentActivity() {
         root.setPadding(dp(20),0,dp(20),dp(16))
         title(root,titleText,true){goBack()}
         val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(18),dp(16),dp(18),dp(16)) }
-        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false; isVerticalScrollBarEnabled=true; scrollBarStyle=View.SCROLLBARS_OUTSIDE_INSET; setPadding(0,0,dp(3),0) }
-        scroll.addView(label(body,15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(0,0,dp(6),dp(10)) })
+        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false; isVerticalScrollBarEnabled=true; scrollBarStyle=View.SCROLLBARS_INSIDE_INSET; verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT; setScrollBarSize(dp(3)); setPadding(0,0,dp(2),0) }
+        scroll.addView(label(body,15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(0,0,dp(10),dp(10)) })
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
     private fun showGameRules(){ informationPage("Game rules","• Add at least two players and set each player's gender and interaction preferences.\n\n• A player is chosen at random. The same player cannot be chosen twice in a row; with four or more players, everyone is selected before anyone repeats.\n\n• Choose Truth or Dare. After two Truth choices in a row, that player must choose Dare next time.\n\n• Targeted prompts follow the active player's saved preference: Men, Women, Men & women, or only their selected specific players.\n\n• Every prompt can be passed or skipped. Keep the game respectful, consensual, and free of physical harm.") }
     private fun privacyText():String = "Effective date: 15 October 2026\n\nTruth or Dare is designed to work locally on your device. The app stores player names, preferences, selected level, custom cards, and game progress only in local app storage so your group can resume later.\n\nWe do not collect, sell, share, or transmit personal information. We do not use advertising, analytics, accounts, location, contacts, camera, microphone, nearby devices, or Bluetooth.\n\nGoogle Play Billing is used only when you choose to buy the optional Premium Levels one-time product. Google processes payment information under its own privacy policy; this app does not receive or store payment card details.\n\nYou can delete local game information at any time by clearing the app's storage or uninstalling the app.\n\nIf this policy changes, the updated version will be included in the app and release notes."
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
-    private fun showAppInformation(){ informationPage("About app","App version\n0.2.9.38\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
+    private fun showAppInformation(){ informationPage("About app","App version\n0.3.1\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(18),dp(18),dp(18),dp(18)) }
@@ -374,6 +393,51 @@ class MainActivity : ComponentActivity() {
         }
         return label("",20,true,ink,Gravity.CENTER).apply { text=styled; setLineSpacing(dp(4).toFloat(),1f) }
     }
+    private inner class PlayerWheelView(context: Context, private val names: List<String>) : View(context) {
+        var wheelRotation = 0f
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val cx=width/2f; val cy=height/2f; val radius=min(width,height)*.43f
+            val bounds=RectF(cx-radius,cy-radius,cx+radius,cy+radius)
+            val step=360f/names.size.coerceAtLeast(1)
+            canvas.save(); canvas.rotate(wheelRotation,cx,cy)
+            names.forEachIndexed { index, name ->
+                paint.color=if(index%2==0) accent else ColorUtils.blendARGB(accent, surface, .48f)
+                canvas.drawArc(bounds,-90f+index*step,step,true,paint)
+                paint.color=onAccent(); paint.textSize=dp(15).toFloat(); paint.typeface=android.graphics.Typeface.create("Google Sans Flex",android.graphics.Typeface.BOLD); paint.textAlign=Paint.Align.CENTER
+                val angle=Math.toRadians((-90f+index*step+step/2f).toDouble())
+                val tx=cx+(radius*.68f*kotlin.math.cos(angle)).toFloat(); val ty=cy+(radius*.68f*kotlin.math.sin(angle)).toFloat()-((paint.descent()+paint.ascent())/2)
+                canvas.drawText(name,tx,ty,paint)
+            }
+            canvas.restore()
+            paint.color=surface; canvas.drawCircle(cx,cy,radius*.27f,paint)
+            paint.color=accent; canvas.drawRoundRect(RectF(cx-dp(13),cy-dp(28),cx+dp(13),cy+dp(29)),dp(10).toFloat(),dp(10).toFloat(),paint)
+            paint.color=onAccent(); canvas.drawRoundRect(RectF(cx-dp(6),cy-dp(43),cx+dp(6),cy-dp(25)),dp(4).toFloat(),dp(4).toFloat(),paint)
+            paint.color=surface; canvas.drawCircle(cx,cy+dp(13),dp(4).toFloat(),paint)
+            paint.color=accent; paint.style=Paint.Style.STROKE; paint.strokeWidth=dp(5).toFloat(); canvas.drawLine(cx,cy-radius-dp(8),cx,cy-radius+dp(12),paint); paint.style=Paint.Style.FILL
+        }
+    }
+    private fun showPlayerSpinner(){
+        if(players.size<2){ showHome(); return }
+        if(remainingTurnIndices.isEmpty()) {
+            if(hasActiveTurn) round++
+            remainingTurnIndices.addAll(players.indices)
+        }
+        val candidates=remainingTurnIndices.filter { !hasActiveTurn || it != turn || remainingTurnIndices.size == 1 }
+        val chosen=(if(candidates.isNotEmpty()) candidates else remainingTurnIndices.toList()).random()
+        remainingTurnIndices.remove(chosen)
+        val root=base(scroll=false)
+        title(root,"Who's next?",true){ showHome() }
+        root.addView(label("Pass the bottle — it picks the next player.",16,false,muted,Gravity.CENTER).apply { setPadding(0,dp(20),0,dp(10)) },lp(-1,-2,0))
+        val wheel=PlayerWheelView(this,players.map { it.name }).apply { minimumHeight=dp(360); background=shape(surface,32,1) }
+        root.addView(wheel,LinearLayout.LayoutParams(-1,0,1f).apply { setMargins(dp(16),dp(10),dp(16),dp(16)) })
+        root.addView(label("Spinning the bottle…",17,true,accent,Gravity.CENTER),lp(-1,dp(48),0))
+        val step=360f/players.size
+        val targetRotation=4*360f-step/2f-chosen*step
+        ValueAnimator.ofFloat(0f,targetRotation).apply { duration=4000; interpolator=DecelerateInterpolator(); addUpdateListener { wheel.wheelRotation=it.animatedValue as Float; wheel.invalidate() }; doOnEnd { turn=chosen; hasActiveTurn=true; currentScreen="choices"; showChoices() }; start() }
+    }
+    private fun ValueAnimator.doOnEnd(action:()->Unit) { addListener(object:android.animation.AnimatorListenerAdapter(){ override fun onAnimationEnd(animation:android.animation.Animator){ action() } }) }
     private fun showChoices(){
         val root=base(); val player=players[turn%players.size]; val truthAllowed=!(limitTruths&&player.truthStreak>=2)
         val header=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(10),dp(6),dp(10),dp(6)) }
@@ -400,10 +464,10 @@ class MainActivity : ComponentActivity() {
         val player=players[turn%players.size]
         val next=button("Done · next turn →",accent,onAccent()){
             if(card.kind=="truth") player.truthStreak++ else player.truthStreak=0
-            turn++; if(turn%players.size==0) round++; saveState()
+            saveState()
             if(navigationStack.isNotEmpty() && navigationStack.last()=="choices") navigationStack.removeLast()
-            currentScreen="choices"
-            showChoices()
+            currentScreen="spinner"
+            showPlayerSpinner()
         }.apply { textSize=20f; minHeight=dp(66) }
         val root=base(dock=next)
         title(root,if(card.kind=="truth")"Truth time" else "Dare time")

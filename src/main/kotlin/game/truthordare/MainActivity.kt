@@ -258,11 +258,14 @@ class MainActivity : ComponentActivity() {
             val row=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),dp(8),dp(8),dp(8)); background=shape(surface,16,1) }
             val info=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
             info.addView(label(p.name,13,true).apply { textSize=13.65f; maxLines=2; ellipsize=android.text.TextUtils.TruncateAt.END })
-            info.addView(label("${p.gender} · ${p.preference}",10,false,muted).apply { maxLines=1; ellipsize=android.text.TextUtils.TruncateAt.END; setPadding(0,dp(3),0,0) })
+            if(p.preference=="Men & women" || p.preference=="Specific players") {
+                info.addView(label(p.gender,10,false,muted).apply { setPadding(0,dp(3),0,0) })
+                info.addView(label(p.preference,10,false,muted))
+            } else info.addView(label("${p.gender} · ${p.preference}",10,false,muted).apply { setPadding(0,dp(3),0,0) })
             row.addView(info,weight(1f))
             row.addView(cardAction(R.drawable.ic_edit,"Edit ${p.name}"){editPlayer(index)},LinearLayout.LayoutParams(dp(42),dp(42)).apply { leftMargin=dp(4) })
             val position=playerGrid.childCount
-            playerGrid.addView(row,GridLayout.LayoutParams().apply { width=0;height=dp(74);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(position%2==0)0 else dp(4);val right=if(position%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) })
+            playerGrid.addView(row,GridLayout.LayoutParams().apply { width=0;height=dp(96);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(position%2==0)0 else dp(4);val right=if(position%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) })
         }
         playersPanel.addView(playerGrid,lp(-1,-2,0))
         playersPanel.addView(add,lp(-1,dp(52),7))

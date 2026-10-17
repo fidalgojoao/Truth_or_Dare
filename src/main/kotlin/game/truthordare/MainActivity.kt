@@ -212,7 +212,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun backButton(action: () -> Unit): ImageButton = ImageButton(this).apply {
         setImageResource(R.drawable.ic_back)
-        setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN)
+        setColorFilter(onAccent(), android.graphics.PorterDuff.Mode.SRC_IN)
         background = shape(accent, 23)
         setPadding(dp(11), dp(11), dp(11), dp(11))
         contentDescription = "Back"
@@ -302,12 +302,12 @@ class MainActivity : ComponentActivity() {
         val root=base(); title(root,"Settings")
         divider(root,7)
         settingsRow(root,"wallpaper","Appearance","Themes, colors, and visual style",{openScreen("appearance"){showAppearance()}})
-        settingsRow(root,"◆","Gameplay","Rules and play preferences",{openScreen("gameplay"){showGameplay()}})
+        settingsRow(root,"gameplay","Gameplay","Rules and play preferences",{openScreen("gameplay"){showGameplay()}})
         settingsRow(root,"ⓘ","About app","Privacy policy, game rules, and app information",{openScreen("about"){showAbout()}})
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,showArrow:Boolean=true){
         val c=card(root,2).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
         val iconHolder=FrameLayout(this).apply { background=shape(accent,24) }
-        if(icon=="wallpaper") iconHolder.addView(ImageView(this).apply { setImageResource(R.drawable.ic_wallpaper); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); contentDescription="Appearance" },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
+        if(icon=="wallpaper" || icon=="gameplay") iconHolder.addView(ImageView(this).apply { setImageResource(if(icon=="wallpaper") R.drawable.ic_wallpaper else R.drawable.ic_gameplay); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
         else iconHolder.addView(label(icon,18,true,onAccent(),Gravity.CENTER),FrameLayout.LayoutParams(-1,-1))
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
@@ -496,7 +496,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showCustomCards(){
         val root=base(); title(root,"My truths and dares")
-        root.addView(label("Create cards for your group, then choose whether a game uses only your cards or mixes them with the regular decks.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))})
+        root.addView(label("Create cards for your group, then choose whether a game uses only your cards or mixes them with the regular decks.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         customCards.forEachIndexed{i,c->
             val row=card(root,6); val line=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
             line.addView(label(c.kind.uppercase(),14,true,accent),LinearLayout.LayoutParams(dp(84),-2))

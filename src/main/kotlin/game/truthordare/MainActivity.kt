@@ -156,18 +156,18 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = !isDark()
         }
     }
-    private fun base(scroll: Boolean = true, dock: View? = null, dockFollowsIme: Boolean = true, dockMargin: Int = 20, hideScrollBar: Boolean = false): LinearLayout {
+    private fun base(scroll: Boolean = true, dock: View? = null, dockFollowsIme: Boolean = true, dockMargin: Int = 16, hideScrollBar: Boolean = false): LinearLayout {
         prepareWindow()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setBackgroundColor(this@MainActivity.background)
-            setPadding(dp(4), 0, dp(4), dp(16))
+            setPadding(if(scroll) 0 else dp(16), 0, if(scroll) 0 else dp(16), dp(16))
         }
         if (!scroll) {
             ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                view.setPadding(bars.left+dp(20),bars.top+dp(4),bars.right+dp(20),bars.bottom+dp(16))
+                view.setPadding(bars.left+dp(16),bars.top+dp(4),bars.right+dp(16),bars.bottom+dp(16))
                 insets
             }
             setContentView(root); return root
@@ -209,14 +209,14 @@ class MainActivity : ComponentActivity() {
         contentDescription = "Back"
         setOnClickListener { action() }
     }
-    private fun title(root: LinearLayout, value: String, back: Boolean = true, backAction: () -> Unit = { goBack() }) {
+    private fun title(root: LinearLayout, value: String, back: Boolean = true, backAction: () -> Unit = { goBack() }, horizontalInset: Int = 16) {
         val top=FrameLayout(this)
         if(back) top.addView(backButton(backAction),FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(label(value,22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER))
-        root.addView(top,lp(-1,dp(46),0).apply { leftMargin=dp(16); rightMargin=dp(16) })
+        root.addView(top,lp(-1,dp(46),0).apply { leftMargin=dp(horizontalInset); rightMargin=dp(horizontalInset) })
     }    private fun label(value: String, sp: Int = 14, bold: Boolean = false, color: Int = ink, gravity: Int = Gravity.START): TextView = TextView(this).apply { text = value; textSize = sp.toFloat(); setTextColor(color); this.gravity = gravity; typeface = android.graphics.Typeface.create("Google Sans Flex", if(bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL); includeFontPadding=false; if(bold) letterSpacing=.01f }
     private fun button(value: String, color: Int = accent, fg: Int = Color.WHITE, click: () -> Unit): TextView = TextView(this).apply { text=value; textSize=15f; typeface=android.graphics.Typeface.create("Google Sans Flex",android.graphics.Typeface.BOLD); setTextColor(fg); gravity=Gravity.CENTER; minHeight=dp(52); background=shape(color,26); setPadding(dp(16),0,dp(16),0); setOnClickListener { click() } }
-    private fun card(root: LinearLayout, margin: Int = 10): LinearLayout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(18),dp(16),dp(18),dp(16)); root.addView(this,lp(-1,-2,margin)) }
+    private fun card(root: LinearLayout, margin: Int = 10): LinearLayout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(16),dp(16),dp(16),dp(16)); root.addView(this,lp(-1,-2,margin).apply { leftMargin=dp(16); rightMargin=dp(16) }) }
     private fun divider(root: LinearLayout, n: Int = 14) { root.addView(Space(this), lp(-1, dp(n),0)) }
     private fun mainMargin(view:View) { (view.layoutParams as? LinearLayout.LayoutParams)?.let { it.leftMargin=dp(16); it.rightMargin=dp(16); view.layoutParams=it } }
 
@@ -275,14 +275,14 @@ class MainActivity : ComponentActivity() {
     }
     private fun editPlayer(index:Int) {
         val player=players[index]; val dialog=Dialog(this)
-        val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(18));background=shape(this@MainActivity.background,22,1)};dialog.setContentView(form)
+        val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(18),dp(16),dp(18));background=shape(this@MainActivity.background,22,1)};dialog.setContentView(form)
         val top=FrameLayout(this);top.addView(backButton{dialog.dismiss()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));top.addView(label("Edit player",18,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));form.addView(top,lp(-1,dp(46),0))
         form.addView(label("You can change this later, including who they want to interact with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(12))});form.addView(label("Name",12,true));val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)};form.addView(name,lp(-1,dp(50),3))
         fun choices(values:List<String>, initial:String, columns:Int=1, change:(String)->Unit={}):Pair<ViewGroup,()->String>{var selected=initial;val host=if(columns==1)LinearLayout(this).apply{gravity=Gravity.CENTER}else GridLayout(this).apply{columnCount=2};val all=mutableListOf<TextView>();values.forEachIndexed{i,v->val b=button(v,if(v==selected)accent else surface,if(v==selected)onAccent()else ink){};b.textSize=13f;b.minHeight=dp(46);b.setOnClickListener{selected=v;all.forEach{x->val on=x.text==v;x.background=shape(if(on)accent else surface,22,1);x.setTextColor(if(on)onAccent()else ink)};change(v)};all.add(b);if(host is LinearLayout)host.addView(b,LinearLayout.LayoutParams(0,dp(46),1f).apply{if(i<values.lastIndex)rightMargin=dp(7)})else host.addView(b,GridLayout.LayoutParams().apply{width=0;height=dp(46);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);setMargins(if(i%2==0)0 else dp(4),dp(2),if(i%2==0)dp(4)else 0,dp(2))})};return host to {selected}}
         form.addView(label("Gender",12,true).apply{setPadding(0,dp(8),0,dp(4))});val(gender,getGender)=choices(listOf("Man","Woman","Other"),player.gender);form.addView(gender)
-        val calibration=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(if(premium)surface else ColorUtils.blendARGB(surface,outline,.42f),16,1);setPadding(dp(12),dp(8),dp(12),dp(8));alpha=if(premium)1f else .55f};val calibrationHead=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val comfortTitle=label("Comfort-zone calibration · ${player.comfort}/10"+if(!premium)"  🔒" else "",12,true,if(premium)ink else muted);calibrationHead.addView(comfortTitle,weight(1f));var comfortEnabled=player.comfortEnabled;calibrationHead.addView(expressiveToggle(comfortEnabled&&premium,premium){comfortEnabled=it},lp(dp(58),dp(36),0));calibration.addView(calibrationHead);calibration.addView(label(if(premium)"Adjust easier prompts for this player." else "Premium feature · unlocks per-player prompt adjustment.",10,false,muted));val comfort=SeekBar(this).apply{max=9;progress=player.comfort-1;progressTintList=android.content.res.ColorStateList.valueOf(accent);thumbTintList=android.content.res.ColorStateList.valueOf(accent);backgroundTintList=android.content.res.ColorStateList.valueOf(outline);minimumHeight=dp(34);isEnabled=premium};comfort.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(s:SeekBar?,v:Int,u:Boolean){comfortTitle.text="Comfort-zone calibration · ${v+1}/10"+if(!premium)"  🔒" else ""};override fun onStartTrackingTouch(s:SeekBar?){};override fun onStopTrackingTouch(s:SeekBar?){}});calibration.addView(comfort,lp(-1,dp(26),0));calibration.addView(label("1 · Wholesome & soft                              10 · Chaos & spicy",10,false,muted,Gravity.CENTER));form.addView(calibration,lp(-1,-2,6))
+        val calibration=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(if(premium)surface else ColorUtils.blendARGB(surface,outline,.42f),16,1);setPadding(dp(16),dp(8),dp(16),dp(8));alpha=if(premium)1f else .55f};val calibrationHead=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val comfortTitle=label("Comfort-zone calibration · ${player.comfort}/10"+if(!premium)"  🔒" else "",12,true,if(premium)ink else muted);calibrationHead.addView(comfortTitle,weight(1f));var comfortEnabled=player.comfortEnabled;calibrationHead.addView(expressiveToggle(comfortEnabled&&premium,premium){comfortEnabled=it},lp(dp(58),dp(36),0));calibration.addView(calibrationHead);calibration.addView(label(if(premium)"Adjust easier prompts for this player." else "Premium feature · unlocks per-player prompt adjustment.",10,false,muted));val comfort=SeekBar(this).apply{max=9;progress=player.comfort-1;progressTintList=android.content.res.ColorStateList.valueOf(accent);thumbTintList=android.content.res.ColorStateList.valueOf(accent);backgroundTintList=android.content.res.ColorStateList.valueOf(outline);minimumHeight=dp(34);isEnabled=premium};comfort.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(s:SeekBar?,v:Int,u:Boolean){comfortTitle.text="Comfort-zone calibration · ${v+1}/10"+if(!premium)"  🔒" else ""};override fun onStartTrackingTouch(s:SeekBar?){};override fun onStopTrackingTouch(s:SeekBar?){}});calibration.addView(comfort,lp(-1,dp(26),0));calibration.addView(label("1 · Wholesome & soft                              10 · Chaos & spicy",10,false,muted,Gravity.CENTER));form.addView(calibration,lp(-1,-2,6))
         form.addView(label("Wants to interact with",12,true).apply{setPadding(0,dp(8),0,dp(4))});val refreshers=mutableListOf<()->Unit>();val(pref,getPref)=choices(listOf("Men","Women","Men & women","Specific players"),player.preference,2){refreshers.forEach{it()}};form.addView(pref);form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(6))})
-        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(4),dp(6),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0)}
+        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0)}
         players.filterIndexed{i,_->i!=index}.forEach{p->val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(this@MainActivity.background,14,1);setPadding(dp(10),0,dp(10),0)};val check=CheckBox(this).apply{buttonTintList=android.content.res.ColorStateList.valueOf(accent);isClickable=false};val copy=label("${p.name}  ·  ${p.gender}",13,true);row.addView(check,lp(dp(40),dp(40),0));row.addView(copy,weight(1f));fun render(){val yes=getPref()=="Specific players";check.isChecked=p.name in selected;row.alpha=if(yes)1f else .38f;copy.setTextColor(if(yes)ink else muted)};row.setOnClickListener{if(getPref()=="Specific players"){if(p.name in selected)selected.remove(p.name)else selected.add(p.name);render()}};refreshers.add(::render);render();list.addView(row,lp(-1,dp(46),2))};val otherPlayers=players.size-1;if(otherPlayers>0){ form.addView(box,LinearLayout.LayoutParams(-1,dp(if(otherPlayers>=3)154 else otherPlayers*48+12)).apply{topMargin=dp(4);bottomMargin=dp(6)}) }
         val actions=LinearLayout(this);actions.addView(button("Remove player",Color.rgb(186,26,26),Color.WHITE){players.removeAt(index);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{rightMargin=dp(6)});actions.addView(button("Save player",accent,onAccent()){player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.comfort=comfort.progress+1;player.comfortEnabled=comfortEnabled&&premium;player.specificPlayers.clear();player.specificPlayers.addAll(selected);saveState();dialog.dismiss();showHome()},LinearLayout.LayoutParams(0,dp(52),1f).apply{leftMargin=dp(6)});form.addView(actions,lp(-1,dp(52),0));dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),if(players.size<=3)WindowManager.LayoutParams.WRAP_CONTENT else (resources.displayMetrics.heightPixels*.88f).toInt());setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.4f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
     }
@@ -365,8 +365,8 @@ class MainActivity : ComponentActivity() {
         settingsRow(root,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},false)
     }    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
-        root.setPadding(dp(20),0,dp(20),dp(16))
-        title(root,titleText,true){goBack()}
+        root.setPadding(dp(16),0,dp(16),dp(16))
+        title(root,titleText,true,{goBack()},0)
         val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(18),dp(16),dp(18),dp(16)) }
         val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false; isVerticalScrollBarEnabled=true; scrollBarStyle=View.SCROLLBARS_INSIDE_INSET; verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT; setScrollBarSize(dp(3)); setPadding(0,0,dp(2),0) }
         scroll.addView(label(body,15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(0,0,dp(10),dp(10)) })
@@ -448,10 +448,10 @@ class MainActivity : ComponentActivity() {
         val chosen=(if(candidates.isNotEmpty()) candidates else remainingTurnIndices.toList()).random()
         remainingTurnIndices.remove(chosen)
         val root=base(scroll=false)
-        title(root,"Who's next?",true){ showHome() }
+        title(root,"Who's next?",true,{ showHome() },0)
         root.addView(label("Pass the bottle — it picks the next player.",16,false,muted,Gravity.CENTER).apply { setPadding(0,dp(20),0,dp(10)) },lp(-1,-2,0))
         val wheel=PlayerWheelView(this,players.map { it.name }).apply { minimumHeight=dp(360); background=shape(surface,32,1) }
-        root.addView(wheel,LinearLayout.LayoutParams(-1,0,1f).apply { setMargins(dp(16),dp(10),dp(16),dp(16)) })
+        root.addView(wheel,LinearLayout.LayoutParams(-1,0,1f).apply { setMargins(0,dp(10),0,dp(16)) })
         root.addView(label("Spinning the bottle…",17,true,accent,Gravity.CENTER),lp(-1,dp(48),0))
         val step=360f/players.size
         val targetRotation=4*360f-step/2f-chosen*step
@@ -475,7 +475,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showCard(card:Card){
         currentCard=card;val player=players[turn%players.size];val next=button("Done · next turn →",accent,onAccent()){if(card.kind=="truth"){player.truthStreak++;player.dareStreak=0}else{player.truthStreak=0;player.dareStreak++};saveState();if(navigationStack.isNotEmpty()&&navigationStack.last()=="choices")navigationStack.removeLast();currentScreen="spinner";showPlayerSpinner()}.apply{textSize=16f;minHeight=dp(72)};val choose=!(limitTruths&&player.truthStreak>=truthLimit);val dock=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};if(choose){dock.addView(button("Choose\nagain",softAccent,onAccent()){activeTimer?.cancel();currentScreen="choices";showChoices()}.apply{textSize=12f},LinearLayout.LayoutParams(0,dp(72),.35f).apply{rightMargin=dp(8)});dock.addView(next,LinearLayout.LayoutParams(0,dp(72),.65f))}else dock.addView(next,LinearLayout.LayoutParams(-1,dp(72)))
-        val root=base(scroll=false);val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));header.addView(label(if(card.kind=="truth")"Truth time" else "Dare time",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));val speaker=button(if(ttsEnabled)"🔊" else "🔇",softAccent,onAccent()){}.apply{textSize=20f;setOnClickListener{animate().rotationBy(180f).setDuration(180).withEndAction{ttsEnabled=!ttsEnabled;saveState();showCard(card)}.start()}};header.addView(speaker,FrameLayout.LayoutParams(dp(46),dp(46),Gravity.END or Gravity.CENTER_VERTICAL));root.addView(header,lp(-1,dp(46),0).apply{leftMargin=dp(16);rightMargin=dp(16)});val display=renderPrompt(card.text,player);if(ttsEnabled)textToSpeech?.speak(display,TextToSpeech.QUEUE_FLUSH,null,"prompt");val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=shape(surface,30,1);setPadding(dp(18),dp(18),dp(18),dp(18));addView(promptLabel(display))};root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply{setMargins(dp(10),dp(10),dp(10),dp(8))});root.addView(dock,LinearLayout.LayoutParams(-1,dp(72)).apply{setMargins(dp(14),0,dp(14),dp(8))})
+        val root=base(scroll=false);val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));header.addView(label(if(card.kind=="truth")"Truth time" else "Dare time",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));val speaker=button(if(ttsEnabled)"🔊" else "🔇",softAccent,onAccent()){}.apply{textSize=20f;setOnClickListener{animate().rotationBy(180f).setDuration(180).withEndAction{ttsEnabled=!ttsEnabled;saveState();showCard(card)}.start()}};header.addView(speaker,FrameLayout.LayoutParams(dp(46),dp(46),Gravity.END or Gravity.CENTER_VERTICAL));root.addView(header,lp(-1,dp(46),0));val display=renderPrompt(card.text,player);if(ttsEnabled)textToSpeech?.speak(display,TextToSpeech.QUEUE_FLUSH,null,"prompt");val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=shape(surface,30,1);setPadding(dp(18),dp(18),dp(18),dp(18));addView(promptLabel(display))};root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply{setMargins(0,dp(10),0,dp(8))});root.addView(dock,LinearLayout.LayoutParams(-1,dp(72)).apply{setMargins(0,0,0,dp(8))})
     }
     private fun startTimer(seconds:Int,tv:TextView){activeTimer?.cancel();activeTimer=object:CountDownTimer(seconds*1000L,1000){override fun onTick(ms:Long){tv.text="${max(1,ms/1000)} s"};override fun onFinish(){tv.text="Time's up!";android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION,90).startTone(android.media.ToneGenerator.TONE_PROP_BEEP2)}}.start()}
     private fun parseSeconds(s:String):Int { val m=Regex("(\\d+)\\s*(seconds?|secs?|minutes?|mins?)",RegexOption.IGNORE_CASE).find(s)?:return if(s.contains("half a minute",true))30 else 0;val n=m.groupValues[1].toInt();return if(m.groupValues[2].lowercase().startsWith("m"))n*60 else n }
@@ -495,10 +495,10 @@ class MainActivity : ComponentActivity() {
             line.addView(cardAction(R.drawable.ic_delete,"Delete card"){customCards.removeAt(i);saveState();showCustomCards()},lp(dp(48),dp(48),3))
             row.addView(line)
         }
-        root.addView(button("Add a custom truth or dare",accent,Color.WHITE){editCustom(-1)},lp(-1,dp(62),10))
+        val addCustom=button("Add a custom truth or dare",accent,Color.WHITE){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
         val manage=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; isClickable=true; setPadding(dp(18),dp(15),dp(18),dp(15)); background=shape(surface,22,1); setOnClickListener { openScreen("manage"){manageCards()} } }
         manage.addView(label("Manage your cards",17,true)); manage.addView(label("Import, export, and organize your custom cards",12,false,muted).apply { setPadding(0,dp(4),0,0) })
-        root.addView(manage,lp(-1,-2,8))
+        root.addView(manage,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
     }
     private fun editCustom(index:Int){
         val old=if(index>=0)customCards[index] else null

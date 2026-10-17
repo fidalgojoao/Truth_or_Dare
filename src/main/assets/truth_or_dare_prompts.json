@@ -14,12 +14,12 @@
       "truths": [
         {
           "id": "soft-truth-001",
-          "text": "What's the silliest fear you still have?",
+          "text": "{X}, what's the silliest fear you still have?",
           "needs_target": false
         },
         {
           "id": "soft-truth-002",
-          "text": "What's your most embarrassing childhood memory?",
+          "text": "{X}, what's your most embarrassing childhood memory?",
           "needs_target": false
         },
         {
@@ -29,7 +29,7 @@
         },
         {
           "id": "soft-truth-004",
-          "text": "What's the worst gift you've ever received?",
+          "text": "{X}, what's the worst gift you've ever received?",
           "needs_target": false
         },
         {
@@ -39,12 +39,12 @@
         },
         {
           "id": "soft-truth-006",
-          "text": "What's the funniest thing you've ever said by accident?",
+          "text": "{X}, what's the funniest thing you've ever said by accident?",
           "needs_target": false
         },
         {
           "id": "soft-truth-007",
-          "text": "What's a song you know every word to but would never admit it?",
+          "text": "{X}, what's a song you know every word to but would never admit it?",
           "needs_target": false
         },
         {
@@ -54,12 +54,12 @@
         },
         {
           "id": "soft-truth-009",
-          "text": "What's the longest you've gone without showering on a trip or camping?",
+          "text": "{X}, what's the longest you've gone without showering on a trip or camping?",
           "needs_target": false
         },
         {
           "id": "soft-truth-010",
-          "text": "What's the weirdest thing you've ever Googled?",
+          "text": "{X}, what's the weirdest thing you've ever Googled?",
           "needs_target": false
         },
         {
@@ -69,12 +69,12 @@
         },
         {
           "id": "soft-truth-012",
-          "text": "What's the worst haircut you've ever had?",
+          "text": "{X}, what's the worst haircut you've ever had?",
           "needs_target": false
         },
         {
           "id": "soft-truth-013",
-          "text": "What's a lie you told as a kid that you still remember?",
+          "text": "{X}, what's a lie you told as a kid that you still remember?",
           "needs_target": false
         },
         {
@@ -84,7 +84,7 @@
         },
         {
           "id": "soft-truth-015",
-          "text": "What's the most embarrassing thing in your camera roll?",
+          "text": "{X}, what's the most embarrassing thing in your camera roll?",
           "needs_target": false
         },
         {
@@ -94,12 +94,12 @@
         },
         {
           "id": "soft-truth-017",
-          "text": "What cartoon character do you relate to most?",
+          "text": "{X}, what cartoon character do you relate to most?",
           "needs_target": false
         },
         {
           "id": "soft-truth-018",
-          "text": "What's the worst job you've ever had?",
+          "text": "{X}, what's the worst job you've ever had?",
           "needs_target": false
         },
         {
@@ -109,12 +109,12 @@
         },
         {
           "id": "soft-truth-020",
-          "text": "What's something you pretend to like but actually hate?",
+          "text": "{X}, what's something you pretend to like but actually hate?",
           "needs_target": false
         },
         {
           "id": "soft-truth-021",
-          "text": "What's the most trouble you ever got in at school?",
+          "text": "{X}, what's the most trouble you ever got in at school?",
           "needs_target": false
         },
         {
@@ -124,12 +124,12 @@
         },
         {
           "id": "soft-truth-023",
-          "text": "What's the strangest dream you can remember?",
+          "text": "{X}, what's the strangest dream you can remember?",
           "needs_target": false
         },
         {
           "id": "soft-truth-024",
-          "text": "What's your most irrational pet peeve?",
+          "text": "{X}, what's your most irrational pet peeve?",
           "needs_target": false
         },
         {
@@ -139,12 +139,12 @@
         },
         {
           "id": "soft-truth-026",
-          "text": "What's a rule you always break?",
+          "text": "{X}, what's a rule you always break?",
           "needs_target": false
         },
         {
           "id": "soft-truth-027",
-          "text": "What's the most embarrassing nickname you've ever had?",
+          "text": "{X}, what's the most embarrassing nickname you've ever had?",
           "needs_target": false
         },
         {
@@ -154,12 +154,12 @@
         },
         {
           "id": "soft-truth-029",
-          "text": "What's a movie that made you cry and you denied it?",
+          "text": "{X}, what's a movie that made you cry and you denied it?",
           "needs_target": false
         },
         {
           "id": "soft-truth-030",
-          "text": "What would you do with a million dollars in the first hour?",
+          "text": "{X}, what would you do with a million dollars in the first hour?",
           "needs_target": false
         },
         {
@@ -169,12 +169,12 @@
         },
         {
           "id": "soft-truth-032",
-          "text": "What's the longest you've ever stayed awake, and why?",
+          "text": "{X}, what's the longest you've ever stayed awake, and why?",
           "needs_target": false
         },
         {
           "id": "soft-truth-033",
-          "text": "What's your most useless skill?",
+          "text": "{X}, what's your most useless skill?",
           "needs_target": false
         },
         {
@@ -184,12 +184,12 @@
         },
         {
           "id": "soft-truth-035",
-          "text": "What's your biggest fear about getting older?",
+          "text": "{X}, what's your biggest fear about getting older?",
           "needs_target": false
         },
         {
           "id": "soft-truth-036",
-          "text": "What's something you've never told your parents?",
+          "text": "{X}, what's something you've never told your parents?",
           "needs_target": false
         },
         {
@@ -199,12 +199,12 @@
         },
         {
           "id": "soft-truth-038",
-          "text": "If you were an animal, which would you be and why?",
+          "text": "{X}, if you were an animal, which would you be and why?",
           "needs_target": false
         },
         {
           "id": "soft-truth-039",
-          "text": "What's the most ridiculous argument you've ever had?",
+          "text": "{X}, what's the most ridiculous argument you've ever had?",
           "needs_target": false
         },
         {
@@ -214,12 +214,12 @@
         },
         {
           "id": "soft-truth-041",
-          "text": "What's a talent you wish you had?",
+          "text": "{X}, what's a talent you wish you had?",
           "needs_target": false
         },
         {
           "id": "soft-truth-042",
-          "text": "What's the worst fashion choice you ever made?",
+          "text": "{X}, what's the worst fashion choice you ever made?",
           "needs_target": false
         },
         {
@@ -229,12 +229,12 @@
         },
         {
           "id": "soft-truth-044",
-          "text": "What's your go-to karaoke song?",
+          "text": "{X}, what's your go-to karaoke song?",
           "needs_target": false
         },
         {
           "id": "soft-truth-045",
-          "text": "What's the pettiest thing you've ever done?",
+          "text": "{X}, what's the pettiest thing you've ever done?",
           "needs_target": false
         },
         {
@@ -244,12 +244,12 @@
         },
         {
           "id": "soft-truth-047",
-          "text": "What's the longest you've ever procrastinated on something?",
+          "text": "{X}, what's the longest you've ever procrastinated on something?",
           "needs_target": false
         },
         {
           "id": "soft-truth-048",
-          "text": "What's the most random thing you've ever bought online?",
+          "text": "{X}, what's the most random thing you've ever bought online?",
           "needs_target": false
         },
         {
@@ -259,12 +259,12 @@
         },
         {
           "id": "soft-truth-050",
-          "text": "What's something you're secretly proud of?",
+          "text": "{X}, what's something you're secretly proud of?",
           "needs_target": false
         },
         {
           "id": "soft-truth-051",
-          "text": "What's the last thing you cried over?",
+          "text": "{X}, what's the last thing you cried over?",
           "needs_target": false
         },
         {
@@ -274,12 +274,12 @@
         },
         {
           "id": "soft-truth-053",
-          "text": "What would your superhero name be?",
+          "text": "{X}, what would your superhero name be?",
           "needs_target": false
         },
         {
           "id": "soft-truth-054",
-          "text": "What's the silliest thing you've ever been scared of in the dark?",
+          "text": "{X}, what's the silliest thing you've ever been scared of in the dark?",
           "needs_target": false
         },
         {
@@ -289,12 +289,12 @@
         },
         {
           "id": "soft-truth-056",
-          "text": "What's your most cringe teenage phase?",
+          "text": "{X}, what's your most cringe teenage phase?",
           "needs_target": false
         },
         {
           "id": "soft-truth-057",
-          "text": "What's the best prank you've ever pulled?",
+          "text": "{X}, what's the best prank you've ever pulled?",
           "needs_target": false
         },
         {
@@ -304,12 +304,12 @@
         },
         {
           "id": "soft-truth-059",
-          "text": "What app on your phone do you waste the most time on?",
+          "text": "{X}, what app on your phone do you waste the most time on?",
           "needs_target": false
         },
         {
           "id": "soft-truth-060",
-          "text": "What's the weirdest compliment you've received?",
+          "text": "{X}, what's the weirdest compliment you've received?",
           "needs_target": false
         },
         {
@@ -319,12 +319,12 @@
         },
         {
           "id": "soft-truth-062",
-          "text": "What's the strangest thing in your fridge right now?",
+          "text": "{X}, what's the strangest thing in your fridge right now?",
           "needs_target": false
         },
         {
           "id": "soft-truth-063",
-          "text": "What's a food you refuse to try?",
+          "text": "{X}, what's a food you refuse to try?",
           "needs_target": false
         },
         {
@@ -334,12 +334,12 @@
         },
         {
           "id": "soft-truth-065",
-          "text": "What would you do if you were invisible for a day?",
+          "text": "{X}, what would you do if you were invisible for a day?",
           "needs_target": false
         },
         {
           "id": "soft-truth-066",
-          "text": "What's your worst \"I thought they were waving at me\" moment?",
+          "text": "{X}, what's your worst \"I thought they were waving at me\" moment?",
           "needs_target": false
         },
         {
@@ -349,12 +349,12 @@
         },
         {
           "id": "soft-truth-068",
-          "text": "What's your most-used emoji and why?",
+          "text": "{X}, what's your most-used emoji and why?",
           "needs_target": false
         },
         {
           "id": "soft-truth-069",
-          "text": "What's the weirdest thing you do when you're alone?",
+          "text": "{X}, what's the weirdest thing you do when you're alone?",
           "needs_target": false
         },
         {
@@ -364,12 +364,12 @@
         },
         {
           "id": "soft-truth-071",
-          "text": "What's your biggest dream that sounds silly out loud?",
+          "text": "{X}, what's your biggest dream that sounds silly out loud?",
           "needs_target": false
         },
         {
           "id": "soft-truth-072",
-          "text": "What movie quote do you use all the time?",
+          "text": "{X}, what movie quote do you use all the time?",
           "needs_target": false
         },
         {
@@ -379,12 +379,12 @@
         },
         {
           "id": "soft-truth-074",
-          "text": "What's the worst advice you've ever followed?",
+          "text": "{X}, what's the worst advice you've ever followed?",
           "needs_target": false
         },
         {
           "id": "soft-truth-075",
-          "text": "What's one thing you'd change about yourself?",
+          "text": "{X}, what's one thing you'd change about yourself?",
           "needs_target": false
         },
         {
@@ -394,12 +394,12 @@
         },
         {
           "id": "soft-truth-077",
-          "text": "What's the best meal you've ever had?",
+          "text": "{X}, what's the best meal you've ever had?",
           "needs_target": false
         },
         {
           "id": "soft-truth-078",
-          "text": "What's your most irrational superstition?",
+          "text": "{X}, what's your most irrational superstition?",
           "needs_target": false
         },
         {
@@ -409,12 +409,12 @@
         },
         {
           "id": "soft-truth-080",
-          "text": "What's the biggest risk you've ever taken?",
+          "text": "{X}, what's the biggest risk you've ever taken?",
           "needs_target": false
         },
         {
           "id": "soft-truth-081",
-          "text": "What's the silliest thing you've cried about?",
+          "text": "{X}, what's the silliest thing you've cried about?",
           "needs_target": false
         },
         {
@@ -424,12 +424,12 @@
         },
         {
           "id": "soft-truth-083",
-          "text": "What's the weirdest place you've fallen asleep?",
+          "text": "{X}, what's the weirdest place you've fallen asleep?",
           "needs_target": false
         },
         {
           "id": "soft-truth-084",
-          "text": "What's a skill you faked on your resume?",
+          "text": "{X}, what's a skill you faked on your resume?",
           "needs_target": false
         },
         {
@@ -439,12 +439,12 @@
         },
         {
           "id": "soft-truth-086",
-          "text": "What's the longest text you've ever sent?",
+          "text": "{X}, what's the longest text you've ever sent?",
           "needs_target": false
         },
         {
           "id": "soft-truth-087",
-          "text": "What would be your last meal?",
+          "text": "{X}, what would be your last meal?",
           "needs_target": false
         },
         {
@@ -454,12 +454,12 @@
         },
         {
           "id": "soft-truth-089",
-          "text": "What's the hardest you've ever laughed?",
+          "text": "{X}, what's the hardest you've ever laughed?",
           "needs_target": false
         },
         {
           "id": "soft-truth-090",
-          "text": "What's your most embarrassing autocorrect fail?",
+          "text": "{X}, what's your most embarrassing autocorrect fail?",
           "needs_target": false
         },
         {
@@ -469,12 +469,12 @@
         },
         {
           "id": "soft-truth-092",
-          "text": "What's the most spontaneous thing you've done?",
+          "text": "{X}, what's the most spontaneous thing you've done?",
           "needs_target": false
         },
         {
           "id": "soft-truth-093",
-          "text": "What's your funniest family tradition?",
+          "text": "{X}, what's your funniest family tradition?",
           "needs_target": false
         },
         {
@@ -484,12 +484,12 @@
         },
         {
           "id": "soft-truth-095",
-          "text": "What cartoon did you love as a kid?",
+          "text": "{X}, what cartoon did you love as a kid?",
           "needs_target": false
         },
         {
           "id": "soft-truth-096",
-          "text": "What's the dumbest thing you've ever bought?",
+          "text": "{X}, what's the dumbest thing you've ever bought?",
           "needs_target": false
         },
         {
@@ -499,12 +499,12 @@
         },
         {
           "id": "soft-truth-098",
-          "text": "What's a hobby you've started and quit?",
+          "text": "{X}, what's a hobby you've started and quit?",
           "needs_target": false
         },
         {
           "id": "soft-truth-099",
-          "text": "What's the first thing you'd buy if you won the lottery?",
+          "text": "{X}, what's the first thing you'd buy if you won the lottery?",
           "needs_target": false
         },
         {
@@ -514,12 +514,12 @@
         },
         {
           "id": "soft-truth-101",
-          "text": "What's the most awkward date you've ever been on (non-romantic counts)?",
+          "text": "{X}, what's the most awkward date you've ever been on (non-romantic counts)?",
           "needs_target": false
         },
         {
           "id": "soft-truth-102",
-          "text": "What's a word you always pronounce wrong?",
+          "text": "{X}, what's a word you always pronounce wrong?",
           "needs_target": false
         },
         {
@@ -529,12 +529,12 @@
         },
         {
           "id": "soft-truth-104",
-          "text": "What's the most embarrassing thing your parents have done?",
+          "text": "{X}, what's the most embarrassing thing your parents have done?",
           "needs_target": false
         },
         {
           "id": "soft-truth-105",
-          "text": "What's the last lie you told to get out of plans?",
+          "text": "{X}, what's the last lie you told to get out of plans?",
           "needs_target": false
         },
         {
@@ -544,12 +544,12 @@
         },
         {
           "id": "soft-truth-107",
-          "text": "What's your weirdest talent at parties?",
+          "text": "{X}, what's your weirdest talent at parties?",
           "needs_target": false
         },
         {
           "id": "soft-truth-108",
-          "text": "What's the strangest rumor you've heard about yourself?",
+          "text": "{X}, what's the strangest rumor you've heard about yourself?",
           "needs_target": false
         },
         {
@@ -559,12 +559,12 @@
         },
         {
           "id": "soft-truth-110",
-          "text": "What's the most ridiculous thing you've done for money?",
+          "text": "{X}, what's the most ridiculous thing you've done for money?",
           "needs_target": false
         },
         {
           "id": "soft-truth-111",
-          "text": "What's the best joke you know?",
+          "text": "{X}, what's the best joke you know?",
           "needs_target": false
         },
         {
@@ -574,12 +574,12 @@
         },
         {
           "id": "soft-truth-113",
-          "text": "What's something you secretly love doing alone?",
+          "text": "{X}, what's something you secretly love doing alone?",
           "needs_target": false
         },
         {
           "id": "soft-truth-114",
-          "text": "What would you do if you could teleport for one day?",
+          "text": "{X}, what would you do if you could teleport for one day?",
           "needs_target": false
         },
         {
@@ -589,12 +589,12 @@
         },
         {
           "id": "soft-truth-116",
-          "text": "What's the oldest thing in your wardrobe?",
+          "text": "{X}, what's the oldest thing in your wardrobe?",
           "needs_target": false
         },
         {
           "id": "soft-truth-117",
-          "text": "What's one thing you'd put in a time capsule?",
+          "text": "{X}, what's one thing you'd put in a time capsule?",
           "needs_target": false
         },
         {
@@ -604,12 +604,12 @@
         },
         {
           "id": "soft-truth-119",
-          "text": "What would your autobiography be called?",
+          "text": "{X}, what would your autobiography be called?",
           "needs_target": false
         },
         {
           "id": "soft-truth-120",
-          "text": "What's the funniest thing you've ever seen on a first day of school or work?",
+          "text": "{X}, what's the funniest thing you've ever seen on a first day of school or work?",
           "needs_target": false
         },
         {
@@ -619,12 +619,12 @@
         },
         {
           "id": "soft-truth-122",
-          "text": "What's your go-to excuse for being late?",
+          "text": "{X}, what's your go-to excuse for being late?",
           "needs_target": false
         },
         {
           "id": "soft-truth-123",
-          "text": "What's the last thing that made you laugh out loud?",
+          "text": "{X}, what's the last thing that made you laugh out loud?",
           "needs_target": false
         },
         {
@@ -634,12 +634,12 @@
         },
         {
           "id": "soft-truth-125",
-          "text": "What's something you secretly want to try?",
+          "text": "{X}, what's something you secretly want to try?",
           "needs_target": false
         },
         {
           "id": "soft-truth-126",
-          "text": "What's the weirdest sound you can make?",
+          "text": "{X}, what's the weirdest sound you can make?",
           "needs_target": false
         },
         {
@@ -649,12 +649,12 @@
         },
         {
           "id": "soft-truth-128",
-          "text": "What's your biggest \"I can't believe that worked\" moment?",
+          "text": "{X}, what's your biggest \"I can't believe that worked\" moment?",
           "needs_target": false
         },
         {
           "id": "soft-truth-129",
-          "text": "What's the most you've ever eaten in one sitting?",
+          "text": "{X}, what's the most you've ever eaten in one sitting?",
           "needs_target": false
         },
         {
@@ -664,12 +664,12 @@
         },
         {
           "id": "soft-truth-131",
-          "text": "What's your most embarrassing text mistake?",
+          "text": "{X}, what's your most embarrassing text mistake?",
           "needs_target": false
         },
         {
           "id": "soft-truth-132",
-          "text": "What's the strangest thing you've collected?",
+          "text": "{X}, what's the strangest thing you've collected?",
           "needs_target": false
         },
         {
@@ -679,12 +679,12 @@
         },
         {
           "id": "soft-truth-134",
-          "text": "What do you do when you're nervous?",
+          "text": "{X}, what do you do when you're nervous?",
           "needs_target": false
         },
         {
           "id": "soft-truth-135",
-          "text": "What's the best surprise you've ever had?",
+          "text": "{X}, what's the best surprise you've ever had?",
           "needs_target": false
         },
         {
@@ -694,12 +694,12 @@
         },
         {
           "id": "soft-truth-137",
-          "text": "What's the funniest thing a kid has ever said to you?",
+          "text": "{X}, what's the funniest thing a kid has ever said to you?",
           "needs_target": false
         },
         {
           "id": "soft-truth-138",
-          "text": "What's the most unusual name you've heard?",
+          "text": "{X}, what's the most unusual name you've heard?",
           "needs_target": false
         },
         {
@@ -709,12 +709,12 @@
         },
         {
           "id": "soft-truth-140",
-          "text": "What's the biggest lie you've told as a joke?",
+          "text": "{X}, what's the biggest lie you've told as a joke?",
           "needs_target": false
         },
         {
           "id": "soft-truth-141",
-          "text": "What's the craziest thing you've done on a dare?",
+          "text": "{X}, what's the craziest thing you've done on a dare?",
           "needs_target": false
         },
         {
@@ -724,12 +724,12 @@
         },
         {
           "id": "soft-truth-143",
-          "text": "What's your weirdest food craving?",
+          "text": "{X}, what's your weirdest food craving?",
           "needs_target": false
         },
         {
           "id": "soft-truth-144",
-          "text": "What's one thing you'd never do for a million dollars?",
+          "text": "{X}, what's one thing you'd never do for a million dollars?",
           "needs_target": false
         },
         {
@@ -739,12 +739,12 @@
         },
         {
           "id": "soft-truth-146",
-          "text": "What's a conspiracy theory you find funny?",
+          "text": "{X}, what's a conspiracy theory you find funny?",
           "needs_target": false
         },
         {
           "id": "soft-truth-147",
-          "text": "What's your most-played song of the year?",
+          "text": "{X}, what's your most-played song of the year?",
           "needs_target": false
         },
         {
@@ -754,12 +754,12 @@
         },
         {
           "id": "soft-truth-149",
-          "text": "What's the worst smell you've ever encountered?",
+          "text": "{X}, what's the worst smell you've ever encountered?",
           "needs_target": false
         },
         {
           "id": "soft-truth-150",
-          "text": "What's the weirdest thing you've heard someone say in their sleep?",
+          "text": "{X}, what's the weirdest thing you've heard someone say in their sleep?",
           "needs_target": false
         },
         {
@@ -769,12 +769,12 @@
         },
         {
           "id": "soft-truth-152",
-          "text": "What's your funniest embarrassing moment with a teacher?",
+          "text": "{X}, what's your funniest embarrassing moment with a teacher?",
           "needs_target": false
         },
         {
           "id": "soft-truth-153",
-          "text": "What's the best compliment you've ever received?",
+          "text": "{X}, what's the best compliment you've ever received?",
           "needs_target": false
         },
         {
@@ -784,12 +784,12 @@
         },
         {
           "id": "soft-truth-155",
-          "text": "What's something you're irrationally competitive about?",
+          "text": "{X}, what's something you're irrationally competitive about?",
           "needs_target": false
         },
         {
           "id": "soft-truth-156",
-          "text": "What would you do if you were mayor for a day?",
+          "text": "{X}, what would you do if you were mayor for a day?",
           "needs_target": false
         },
         {
@@ -799,12 +799,12 @@
         },
         {
           "id": "soft-truth-158",
-          "text": "What's your favorite way to waste time?",
+          "text": "{X}, what's your favorite way to waste time?",
           "needs_target": false
         },
         {
           "id": "soft-truth-159",
-          "text": "What's the biggest misunderstanding you've been part of?",
+          "text": "{X}, what's the biggest misunderstanding you've been part of?",
           "needs_target": false
         },
         {
@@ -814,12 +814,12 @@
         },
         {
           "id": "soft-truth-161",
-          "text": "What's the strangest thing you believed as a child?",
+          "text": "{X}, what's the strangest thing you believed as a child?",
           "needs_target": false
         },
         {
           "id": "soft-truth-162",
-          "text": "What's a place you'd love to visit with {Y}?",
+          "text": "{X}, what's a place you'd love to visit with {Y}?",
           "needs_target": true
         },
         {
@@ -829,12 +829,12 @@
         },
         {
           "id": "soft-truth-164",
-          "text": "What would you name a pet rock?",
+          "text": "{X}, what would you name a pet rock?",
           "needs_target": false
         },
         {
           "id": "soft-truth-165",
-          "text": "What's the funniest autocorrect you've seen?",
+          "text": "{X}, what's the funniest autocorrect you've seen?",
           "needs_target": false
         },
         {
@@ -844,12 +844,12 @@
         },
         {
           "id": "soft-truth-167",
-          "text": "What's your worst \"wrong person\" mix-up?",
+          "text": "{X}, what's your worst \"wrong person\" mix-up?",
           "needs_target": false
         },
         {
           "id": "soft-truth-168",
-          "text": "What's one thing on your bucket list that's goofy?",
+          "text": "{X}, what's one thing on your bucket list that's goofy?",
           "needs_target": false
         },
         {
@@ -859,12 +859,12 @@
         },
         {
           "id": "soft-truth-170",
-          "text": "What's the best nap you've ever had?",
+          "text": "{X}, what's the best nap you've ever had?",
           "needs_target": false
         },
         {
           "id": "soft-truth-171",
-          "text": "What's the funniest thing you've said in your sleep?",
+          "text": "{X}, what's the funniest thing you've said in your sleep?",
           "needs_target": false
         },
         {
@@ -874,12 +874,12 @@
         },
         {
           "id": "soft-truth-173",
-          "text": "What's the last silly thing you laughed about with a friend?",
+          "text": "{X}, what's the last silly thing you laughed about with a friend?",
           "needs_target": false
         },
         {
           "id": "soft-truth-174",
-          "text": "What's one thing you're thankful for today?",
+          "text": "{X}, what's one thing you're thankful for today?",
           "needs_target": false
         },
         {
@@ -889,12 +889,12 @@
         },
         {
           "id": "soft-truth-176",
-          "text": "What did you want to be when you grew up?",
+          "text": "{X}, what did you want to be when you grew up?",
           "needs_target": false
         },
         {
           "id": "soft-truth-177",
-          "text": "What's the oldest lie you still haven't confessed?",
+          "text": "{X}, what's the oldest lie you still haven't confessed?",
           "needs_target": false
         },
         {
@@ -904,12 +904,12 @@
         },
         {
           "id": "soft-truth-179",
-          "text": "What would you do if you found a wallet full of cash?",
+          "text": "{X}, what would you do if you found a wallet full of cash?",
           "needs_target": false
         },
         {
           "id": "soft-truth-180",
-          "text": "What's the dumbest thing you've done to impress someone?",
+          "text": "{X}, what's the dumbest thing you've done to impress someone?",
           "needs_target": false
         },
         {
@@ -919,7 +919,7 @@
         },
         {
           "id": "soft-truth-182",
-          "text": "What's the most useless thing you own?",
+          "text": "{X}, what's the most useless thing you own?",
           "needs_target": false
         },
         {
@@ -929,7 +929,7 @@
         },
         {
           "id": "soft-truth-184",
-          "text": "What's your favorite childhood snack?",
+          "text": "{X}, what's your favorite childhood snack?",
           "needs_target": false
         },
         {
@@ -939,7 +939,7 @@
         },
         {
           "id": "soft-truth-186",
-          "text": "What's the silliest thing you've ever argued about with {Y}?",
+          "text": "{X}, what's the silliest thing you've ever argued about with {Y}?",
           "needs_target": true
         },
         {
@@ -949,7 +949,7 @@
         },
         {
           "id": "soft-truth-188",
-          "text": "What's the weirdest hobby you've ever tried?",
+          "text": "{X}, what's the weirdest hobby you've ever tried?",
           "needs_target": false
         },
         {
@@ -959,7 +959,7 @@
         },
         {
           "id": "soft-truth-190",
-          "text": "What's the most embarrassing thing you've worn to school or work?",
+          "text": "{X}, what's the most embarrassing thing you've worn to school or work?",
           "needs_target": false
         },
         {
@@ -969,7 +969,7 @@
         },
         {
           "id": "soft-truth-192",
-          "text": "What's your favorite way to celebrate a birthday?",
+          "text": "{X}, what's your favorite way to celebrate a birthday?",
           "needs_target": false
         },
         {
@@ -979,7 +979,7 @@
         },
         {
           "id": "soft-truth-194",
-          "text": "What's the best thing you've learned this year?",
+          "text": "{X}, what's the best thing you've learned this year?",
           "needs_target": false
         },
         {
@@ -989,7 +989,7 @@
         },
         {
           "id": "soft-truth-196",
-          "text": "What's the worst movie you've ever loved?",
+          "text": "{X}, what's the worst movie you've ever loved?",
           "needs_target": false
         },
         {
@@ -999,7 +999,7 @@
         },
         {
           "id": "soft-truth-198",
-          "text": "What's your funniest \"I walked into a glass door\" moment?",
+          "text": "{X}, what's your funniest \"I walked into a glass door\" moment?",
           "needs_target": false
         },
         {
@@ -1009,7 +1009,7 @@
         },
         {
           "id": "soft-truth-200",
-          "text": "What's the first thing you'd do if you woke up as the opposite of yourself for a day?",
+          "text": "{X}, what's the first thing you'd do if you woke up as the opposite of yourself for a day?",
           "needs_target": false
         }
       ],
@@ -2021,7 +2021,7 @@
       "truths": [
         {
           "id": "hot-truth-001",
-          "text": "Who in this room do you think has the best style, {X}?",
+          "text": "{X}, who in this room do you think has the best style?",
           "needs_target": false
         },
         {
@@ -2031,7 +2031,7 @@
         },
         {
           "id": "hot-truth-003",
-          "text": "What's the most romantic thing you've ever done?",
+          "text": "{X}, what's the most romantic thing you've ever done?",
           "needs_target": false
         },
         {
@@ -2041,7 +2041,7 @@
         },
         {
           "id": "hot-truth-005",
-          "text": "What's your best pickup line?",
+          "text": "{X}, what's your best pickup line?",
           "needs_target": false
         },
         {
@@ -2051,7 +2051,7 @@
         },
         {
           "id": "hot-truth-007",
-          "text": "What's the most flirtatious thing you've ever said?",
+          "text": "{X}, what's the most flirtatious thing you've ever said?",
           "needs_target": false
         },
         {
@@ -2061,7 +2061,7 @@
         },
         {
           "id": "hot-truth-009",
-          "text": "What's your love language?",
+          "text": "{X}, what's your love language?",
           "needs_target": false
         },
         {
@@ -2071,7 +2071,7 @@
         },
         {
           "id": "hot-truth-011",
-          "text": "What's the best compliment someone could give you?",
+          "text": "{X}, what's the best compliment someone could give you?",
           "needs_target": false
         },
         {
@@ -2081,7 +2081,7 @@
         },
         {
           "id": "hot-truth-013",
-          "text": "What's the cutest date idea you've heard?",
+          "text": "{X}, what's the cutest date idea you've heard?",
           "needs_target": false
         },
         {
@@ -2091,7 +2091,7 @@
         },
         {
           "id": "hot-truth-015",
-          "text": "What's your idea of the perfect kiss?",
+          "text": "{X}, what's your idea of the perfect kiss?",
           "needs_target": false
         },
         {
@@ -2101,7 +2101,7 @@
         },
         {
           "id": "hot-truth-017",
-          "text": "What makes you instantly attracted to someone?",
+          "text": "{X}, what makes you instantly attracted to someone?",
           "needs_target": false
         },
         {
@@ -2111,7 +2111,7 @@
         },
         {
           "id": "hot-truth-019",
-          "text": "What outfit do you feel most confident in?",
+          "text": "{X}, what outfit do you feel most confident in?",
           "needs_target": false
         },
         {
@@ -2121,7 +2121,7 @@
         },
         {
           "id": "hot-truth-021",
-          "text": "What's the best date you've ever been on?",
+          "text": "{X}, what's the best date you've ever been on?",
           "needs_target": false
         },
         {
@@ -2131,7 +2131,7 @@
         },
         {
           "id": "hot-truth-023",
-          "text": "What's your favorite feature on yourself?",
+          "text": "{X}, what's your favorite feature on yourself?",
           "needs_target": false
         },
         {
@@ -2141,7 +2141,7 @@
         },
         {
           "id": "hot-truth-025",
-          "text": "What's your biggest relationship green flag?",
+          "text": "{X}, what's your biggest relationship green flag?",
           "needs_target": false
         },
         {
@@ -2151,7 +2151,7 @@
         },
         {
           "id": "hot-truth-027",
-          "text": "What do you find irresistible about someone who's confident?",
+          "text": "{X}, what do you find irresistible about someone who's confident?",
           "needs_target": false
         },
         {
@@ -2161,7 +2161,7 @@
         },
         {
           "id": "hot-truth-029",
-          "text": "What would make you say yes to a second date?",
+          "text": "{X}, what would make you say yes to a second date?",
           "needs_target": false
         },
         {
@@ -2171,7 +2171,7 @@
         },
         {
           "id": "hot-truth-031",
-          "text": "Who in this group would you want to go on a vacation with, {X}?",
+          "text": "{X}, who in this group would you want to go on a vacation with?",
           "needs_target": false
         },
         {
@@ -2181,7 +2181,7 @@
         },
         {
           "id": "hot-truth-033",
-          "text": "What's the sweetest message you've ever received?",
+          "text": "{X}, what's the sweetest message you've ever received?",
           "needs_target": false
         },
         {
@@ -2191,7 +2191,7 @@
         },
         {
           "id": "hot-truth-035",
-          "text": "What makes someone's smile attractive to you?",
+          "text": "{X}, what makes someone's smile attractive to you?",
           "needs_target": false
         },
         {
@@ -2201,7 +2201,7 @@
         },
         {
           "id": "hot-truth-037",
-          "text": "What's a quality you look for in a partner?",
+          "text": "{X}, what's a quality you look for in a partner?",
           "needs_target": false
         },
         {
@@ -2211,7 +2211,7 @@
         },
         {
           "id": "hot-truth-039",
-          "text": "What perfume or cologne draws you in?",
+          "text": "{X}, what perfume or cologne draws you in?",
           "needs_target": false
         },
         {
@@ -2221,7 +2221,7 @@
         },
         {
           "id": "hot-truth-041",
-          "text": "What's the most heart-fluttering moment you've had?",
+          "text": "{X}, what's the most heart-fluttering moment you've had?",
           "needs_target": false
         },
         {
@@ -2231,7 +2231,7 @@
         },
         {
           "id": "hot-truth-043",
-          "text": "What's your idea of a perfect slow dance?",
+          "text": "{X}, what's your idea of a perfect slow dance?",
           "needs_target": false
         },
         {
@@ -2241,7 +2241,7 @@
         },
         {
           "id": "hot-truth-045",
-          "text": "What's the best way to ask someone out?",
+          "text": "{X}, what's the best way to ask someone out?",
           "needs_target": false
         },
         {
@@ -2251,7 +2251,7 @@
         },
         {
           "id": "hot-truth-047",
-          "text": "What's the biggest romantic risk you've taken?",
+          "text": "{X}, what's the biggest romantic risk you've taken?",
           "needs_target": false
         },
         {
@@ -2261,7 +2261,7 @@
         },
         {
           "id": "hot-truth-049",
-          "text": "What's the first thing you do when you meet someone attractive?",
+          "text": "{X}, what's the first thing you do when you meet someone attractive?",
           "needs_target": false
         },
         {
@@ -2271,7 +2271,7 @@
         },
         {
           "id": "hot-truth-051",
-          "text": "What do you find sexy about someone's laugh?",
+          "text": "{X}, what do you find sexy about someone's laugh?",
           "needs_target": false
         },
         {
@@ -2281,7 +2281,7 @@
         },
         {
           "id": "hot-truth-053",
-          "text": "What do you think makes a first impression last?",
+          "text": "{X}, what do you think makes a first impression last?",
           "needs_target": false
         },
         {
@@ -2291,7 +2291,7 @@
         },
         {
           "id": "hot-truth-055",
-          "text": "What's your best flirty text?",
+          "text": "{X}, what's your best flirty text?",
           "needs_target": false
         },
         {
@@ -2301,7 +2301,7 @@
         },
         {
           "id": "hot-truth-057",
-          "text": "What's your favorite romantic cliché?",
+          "text": "{X}, what's your favorite romantic cliché?",
           "needs_target": false
         },
         {
@@ -2311,7 +2311,7 @@
         },
         {
           "id": "hot-truth-059",
-          "text": "What's your idea of a romantic getaway?",
+          "text": "{X}, what's your idea of a romantic getaway?",
           "needs_target": false
         },
         {
@@ -2321,7 +2321,7 @@
         },
         {
           "id": "hot-truth-061",
-          "text": "Who here do you think has the nicest smile?",
+          "text": "{X}, who here do you think has the nicest smile?",
           "needs_target": false
         },
         {
@@ -2331,7 +2331,7 @@
         },
         {
           "id": "hot-truth-063",
-          "text": "What's your favorite thing to do on a date?",
+          "text": "{X}, what's your favorite thing to do on a date?",
           "needs_target": false
         },
         {
@@ -2341,7 +2341,7 @@
         },
         {
           "id": "hot-truth-065",
-          "text": "What's a rom-com cliché you actually love?",
+          "text": "{X}, what's a rom-com cliché you actually love?",
           "needs_target": false
         },
         {
@@ -2351,7 +2351,7 @@
         },
         {
           "id": "hot-truth-067",
-          "text": "What's your biggest dating pet peeve?",
+          "text": "{X}, what's your biggest dating pet peeve?",
           "needs_target": false
         },
         {
@@ -2361,7 +2361,7 @@
         },
         {
           "id": "hot-truth-069",
-          "text": "What do you find most attractive about a voice?",
+          "text": "{X}, what do you find most attractive about a voice?",
           "needs_target": false
         },
         {
@@ -2371,7 +2371,7 @@
         },
         {
           "id": "hot-truth-071",
-          "text": "What's the sweetest nickname someone's given you?",
+          "text": "{X}, what's the sweetest nickname someone's given you?",
           "needs_target": false
         },
         {
@@ -2381,7 +2381,7 @@
         },
         {
           "id": "hot-truth-073",
-          "text": "What's the most flirty thing you've done at a party?",
+          "text": "{X}, what's the most flirty thing you've done at a party?",
           "needs_target": false
         },
         {
@@ -2391,7 +2391,7 @@
         },
         {
           "id": "hot-truth-075",
-          "text": "How do you know when someone is flirting with you?",
+          "text": "{X}, how do you know when someone is flirting with you?",
           "needs_target": false
         },
         {
@@ -2401,7 +2401,7 @@
         },
         {
           "id": "hot-truth-077",
-          "text": "What's the longest eye contact you've held with someone?",
+          "text": "{X}, what's the longest eye contact you've held with someone?",
           "needs_target": false
         },
         {
@@ -2411,7 +2411,7 @@
         },
         {
           "id": "hot-truth-079",
-          "text": "What do you do when you catch someone staring at you?",
+          "text": "{X}, what do you do when you catch someone staring at you?",
           "needs_target": false
         },
         {
@@ -2421,7 +2421,7 @@
         },
         {
           "id": "hot-truth-081",
-          "text": "What would be your perfect proposal?",
+          "text": "{X}, what would be your perfect proposal?",
           "needs_target": false
         },
         {
@@ -2431,7 +2431,7 @@
         },
         {
           "id": "hot-truth-083",
-          "text": "Who would you want to dance with at a wedding, {X}?",
+          "text": "{X}, who would you want to dance with at a wedding?",
           "needs_target": false
         },
         {
@@ -2441,7 +2441,7 @@
         },
         {
           "id": "hot-truth-085",
-          "text": "What's the best romantic gesture you've ever witnessed?",
+          "text": "{X}, what's the best romantic gesture you've ever witnessed?",
           "needs_target": false
         },
         {
@@ -2451,7 +2451,7 @@
         },
         {
           "id": "hot-truth-087",
-          "text": "What's your favorite way to say \"I like you\"?",
+          "text": "{X}, what's your favorite way to say \"I like you\"?",
           "needs_target": false
         },
         {
@@ -2461,7 +2461,7 @@
         },
         {
           "id": "hot-truth-089",
-          "text": "What makes you feel butterflies?",
+          "text": "{X}, what makes you feel butterflies?",
           "needs_target": false
         },
         {
@@ -2471,7 +2471,7 @@
         },
         {
           "id": "hot-truth-091",
-          "text": "Which cologne or perfume on someone makes you look twice?",
+          "text": "{X}, which cologne or perfume on someone makes you look twice?",
           "needs_target": false
         },
         {
@@ -2481,7 +2481,7 @@
         },
         {
           "id": "hot-truth-093",
-          "text": "What do you want someone to notice about you first?",
+          "text": "{X}, what do you want someone to notice about you first?",
           "needs_target": false
         },
         {
@@ -2491,7 +2491,7 @@
         },
         {
           "id": "hot-truth-095",
-          "text": "What's your favorite flirty emoji?",
+          "text": "{X}, what's your favorite flirty emoji?",
           "needs_target": false
         },
         {
@@ -2501,7 +2501,7 @@
         },
         {
           "id": "hot-truth-097",
-          "text": "What does a perfect good-morning text look like?",
+          "text": "{X}, what does a perfect good-morning text look like?",
           "needs_target": false
         },
         {
@@ -2511,7 +2511,7 @@
         },
         {
           "id": "hot-truth-099",
-          "text": "What's the most romantic city in the world to you?",
+          "text": "{X}, what's the most romantic city in the world to you?",
           "needs_target": false
         },
         {
@@ -2521,7 +2521,7 @@
         },
         {
           "id": "hot-truth-101",
-          "text": "What would you do for a perfect romantic evening?",
+          "text": "{X}, what would you do for a perfect romantic evening?",
           "needs_target": false
         },
         {
@@ -2531,7 +2531,7 @@
         },
         {
           "id": "hot-truth-103",
-          "text": "What's the cutest thing a crush has ever done?",
+          "text": "{X}, what's the cutest thing a crush has ever done?",
           "needs_target": false
         },
         {
@@ -2541,7 +2541,7 @@
         },
         {
           "id": "hot-truth-105",
-          "text": "What's your first-date tradition?",
+          "text": "{X}, what's your first-date tradition?",
           "needs_target": false
         },
         {
@@ -2551,7 +2551,7 @@
         },
         {
           "id": "hot-truth-107",
-          "text": "What makes you fall for someone?",
+          "text": "{X}, what makes you fall for someone?",
           "needs_target": false
         },
         {
@@ -2561,7 +2561,7 @@
         },
         {
           "id": "hot-truth-109",
-          "text": "What's one thing {Y} could do to impress you?",
+          "text": "{X}, what's one thing {Y} could do to impress you?",
           "needs_target": true
         },
         {
@@ -2571,7 +2571,7 @@
         },
         {
           "id": "hot-truth-111",
-          "text": "How do you hide a crush?",
+          "text": "{X}, how do you hide a crush?",
           "needs_target": false
         },
         {
@@ -2581,7 +2581,7 @@
         },
         {
           "id": "hot-truth-113",
-          "text": "What does your dream partner's laugh sound like?",
+          "text": "{X}, what does your dream partner's laugh sound like?",
           "needs_target": false
         },
         {
@@ -2591,7 +2591,7 @@
         },
         {
           "id": "hot-truth-115",
-          "text": "What's the best thing about being single?",
+          "text": "{X}, what's the best thing about being single?",
           "needs_target": false
         },
         {
@@ -2601,7 +2601,7 @@
         },
         {
           "id": "hot-truth-117",
-          "text": "What's the most charming thing someone has said to you?",
+          "text": "{X}, what's the most charming thing someone has said to you?",
           "needs_target": false
         },
         {
@@ -2611,7 +2611,7 @@
         },
         {
           "id": "hot-truth-119",
-          "text": "What's your favorite way to spend time with someone you like?",
+          "text": "{X}, what's your favorite way to spend time with someone you like?",
           "needs_target": false
         },
         {
@@ -2621,7 +2621,7 @@
         },
         {
           "id": "hot-truth-121",
-          "text": "What's the biggest turn-off on a first date?",
+          "text": "{X}, what's the biggest turn-off on a first date?",
           "needs_target": false
         },
         {
@@ -2631,7 +2631,7 @@
         },
         {
           "id": "hot-truth-123",
-          "text": "What would be your ideal anniversary celebration?",
+          "text": "{X}, what would be your ideal anniversary celebration?",
           "needs_target": false
         },
         {
@@ -2641,7 +2641,7 @@
         },
         {
           "id": "hot-truth-125",
-          "text": "How do you show someone you like them without saying it?",
+          "text": "{X}, how do you show someone you like them without saying it?",
           "needs_target": false
         },
         {
@@ -2651,7 +2651,7 @@
         },
         {
           "id": "hot-truth-127",
-          "text": "What's your favorite way to be complimented?",
+          "text": "{X}, what's your favorite way to be complimented?",
           "needs_target": false
         },
         {
@@ -2661,7 +2661,7 @@
         },
         {
           "id": "hot-truth-129",
-          "text": "What's something you'd do to impress {Y}?",
+          "text": "{X}, what's something you'd do to impress {Y}?",
           "needs_target": true
         },
         {
@@ -2671,7 +2671,7 @@
         },
         {
           "id": "hot-truth-131",
-          "text": "What's your favorite thing to do under the stars?",
+          "text": "{X}, what's your favorite thing to do under the stars?",
           "needs_target": false
         },
         {
@@ -2681,7 +2681,7 @@
         },
         {
           "id": "hot-truth-133",
-          "text": "What would make you blush the most?",
+          "text": "{X}, what would make you blush the most?",
           "needs_target": false
         },
         {
@@ -2691,7 +2691,7 @@
         },
         {
           "id": "hot-truth-135",
-          "text": "What's your best \"meet cute\" story?",
+          "text": "{X}, what's your best \"meet cute\" story?",
           "needs_target": false
         },
         {
@@ -2701,7 +2701,7 @@
         },
         {
           "id": "hot-truth-137",
-          "text": "What do you appreciate most in a partner?",
+          "text": "{X}, what do you appreciate most in a partner?",
           "needs_target": false
         },
         {
@@ -2711,7 +2711,7 @@
         },
         {
           "id": "hot-truth-139",
-          "text": "What's your idea of the perfect cuddle?",
+          "text": "{X}, what's your idea of the perfect cuddle?",
           "needs_target": false
         },
         {
@@ -2721,7 +2721,7 @@
         },
         {
           "id": "hot-truth-141",
-          "text": "What does an ideal evening of flirting look like for you?",
+          "text": "{X}, what does an ideal evening of flirting look like for you?",
           "needs_target": false
         },
         {
@@ -2731,7 +2731,7 @@
         },
         {
           "id": "hot-truth-143",
-          "text": "What's the sweetest thing you could whisper to someone?",
+          "text": "{X}, what's the sweetest thing you could whisper to someone?",
           "needs_target": false
         },
         {
@@ -2741,7 +2741,7 @@
         },
         {
           "id": "hot-truth-145",
-          "text": "What's the most dazzling smile you've seen?",
+          "text": "{X}, what's the most dazzling smile you've seen?",
           "needs_target": false
         },
         {
@@ -2751,7 +2751,7 @@
         },
         {
           "id": "hot-truth-147",
-          "text": "What's your favorite thing about holding hands?",
+          "text": "{X}, what's your favorite thing about holding hands?",
           "needs_target": false
         },
         {
@@ -2761,7 +2761,7 @@
         },
         {
           "id": "hot-truth-149",
-          "text": "How would you plan a surprise for someone you like?",
+          "text": "{X}, how would you plan a surprise for someone you like?",
           "needs_target": false
         },
         {
@@ -2771,7 +2771,7 @@
         },
         {
           "id": "hot-truth-151",
-          "text": "What do you like to hear when someone compliments you?",
+          "text": "{X}, what do you like to hear when someone compliments you?",
           "needs_target": false
         },
         {
@@ -2781,7 +2781,7 @@
         },
         {
           "id": "hot-truth-153",
-          "text": "What's your favorite thing about a handsome or beautiful smile?",
+          "text": "{X}, what's your favorite thing about a handsome or beautiful smile?",
           "needs_target": false
         },
         {
@@ -2791,7 +2791,7 @@
         },
         {
           "id": "hot-truth-155",
-          "text": "What's your favorite thing to do on a cozy night in with someone?",
+          "text": "{X}, what's your favorite thing to do on a cozy night in with someone?",
           "needs_target": false
         },
         {
@@ -2801,7 +2801,7 @@
         },
         {
           "id": "hot-truth-157",
-          "text": "What's your most romantic memory?",
+          "text": "{X}, what's your most romantic memory?",
           "needs_target": false
         },
         {
@@ -2811,7 +2811,7 @@
         },
         {
           "id": "hot-truth-159",
-          "text": "What do you think {Y} would say about you?",
+          "text": "{X}, what do you think {Y} would say about you?",
           "needs_target": true
         },
         {
@@ -2821,7 +2821,7 @@
         },
         {
           "id": "hot-truth-161",
-          "text": "What's one thing that makes you feel adored?",
+          "text": "{X}, what's one thing that makes you feel adored?",
           "needs_target": false
         },
         {
@@ -2831,7 +2831,7 @@
         },
         {
           "id": "hot-truth-163",
-          "text": "What's your favorite thing to do with someone special on a Sunday?",
+          "text": "{X}, what's your favorite thing to do with someone special on a Sunday?",
           "needs_target": false
         },
         {
@@ -2841,7 +2841,7 @@
         },
         {
           "id": "hot-truth-165",
-          "text": "What's the one thing that would make you fall for someone?",
+          "text": "{X}, what's the one thing that would make you fall for someone?",
           "needs_target": false
         },
         {
@@ -2851,7 +2851,7 @@
         },
         {
           "id": "hot-truth-167",
-          "text": "What's the most attractive trait in a friend you'd date?",
+          "text": "{X}, what's the most attractive trait in a friend you'd date?",
           "needs_target": false
         },
         {
@@ -2861,7 +2861,7 @@
         },
         {
           "id": "hot-truth-169",
-          "text": "What's your idea of a flirty compliment?",
+          "text": "{X}, what's your idea of a flirty compliment?",
           "needs_target": false
         },
         {
@@ -2876,7 +2876,7 @@
         },
         {
           "id": "hot-truth-172",
-          "text": "What's your ideal romantic dinner?",
+          "text": "{X}, what's your ideal romantic dinner?",
           "needs_target": false
         },
         {
@@ -2886,7 +2886,7 @@
         },
         {
           "id": "hot-truth-174",
-          "text": "What's the cheesiest line that would still work on you?",
+          "text": "{X}, what's the cheesiest line that would still work on you?",
           "needs_target": false
         },
         {
@@ -2896,7 +2896,7 @@
         },
         {
           "id": "hot-truth-176",
-          "text": "What color looks best on you, according to your crush?",
+          "text": "{X}, what color looks best on you, according to your crush?",
           "needs_target": false
         },
         {
@@ -2906,7 +2906,7 @@
         },
         {
           "id": "hot-truth-178",
-          "text": "Who here has the best fashion sense for a date night, {X}?",
+          "text": "{X}, who here has the best fashion sense for a date night?",
           "needs_target": false
         },
         {
@@ -2916,7 +2916,7 @@
         },
         {
           "id": "hot-truth-180",
-          "text": "What's a flirty nickname you'd love to be called?",
+          "text": "{X}, what's a flirty nickname you'd love to be called?",
           "needs_target": false
         },
         {
@@ -2926,7 +2926,7 @@
         },
         {
           "id": "hot-truth-182",
-          "text": "What's the first thing you'd notice at a candlelit dinner with {Y}?",
+          "text": "{X}, what's the first thing you'd notice at a candlelit dinner with {Y}?",
           "needs_target": true
         },
         {
@@ -2936,7 +2936,7 @@
         },
         {
           "id": "hot-truth-184",
-          "text": "What does your ideal slow dance song sound like?",
+          "text": "{X}, what does your ideal slow dance song sound like?",
           "needs_target": false
         },
         {
@@ -2946,7 +2946,7 @@
         },
         {
           "id": "hot-truth-186",
-          "text": "What's your idea of a spontaneous date?",
+          "text": "{X}, what's your idea of a spontaneous date?",
           "needs_target": false
         },
         {
@@ -2956,7 +2956,7 @@
         },
         {
           "id": "hot-truth-188",
-          "text": "What's the best thing about a first kiss?",
+          "text": "{X}, what's the best thing about a first kiss?",
           "needs_target": false
         },
         {
@@ -2966,7 +2966,7 @@
         },
         {
           "id": "hot-truth-190",
-          "text": "What's the most attractive hobby someone can have?",
+          "text": "{X}, what's the most attractive hobby someone can have?",
           "needs_target": false
         },
         {
@@ -2976,7 +2976,7 @@
         },
         {
           "id": "hot-truth-192",
-          "text": "What's the most attractive quality in someone you like?",
+          "text": "{X}, what's the most attractive quality in someone you like?",
           "needs_target": false
         },
         {
@@ -2986,7 +2986,7 @@
         },
         {
           "id": "hot-truth-194",
-          "text": "What would make a perfect picnic date?",
+          "text": "{X}, what would make a perfect picnic date?",
           "needs_target": false
         },
         {
@@ -2996,7 +2996,7 @@
         },
         {
           "id": "hot-truth-196",
-          "text": "What's the best place for a first kiss?",
+          "text": "{X}, what's the best place for a first kiss?",
           "needs_target": false
         },
         {
@@ -3006,7 +3006,7 @@
         },
         {
           "id": "hot-truth-198",
-          "text": "What do you wear when you want to feel irresistible?",
+          "text": "{X}, what do you wear when you want to feel irresistible?",
           "needs_target": false
         },
         {
@@ -3016,7 +3016,7 @@
         },
         {
           "id": "hot-truth-200",
-          "text": "What's your idea of a dreamy sunrise or sunset date?",
+          "text": "{X}, what's your idea of a dreamy sunrise or sunset date?",
           "needs_target": false
         }
       ],
@@ -4033,7 +4033,7 @@
         },
         {
           "id": "hard-truth-002",
-          "text": "What's your favorite thing about kissing {Y}, or what do you imagine it'd be like?",
+          "text": "{X}, what's your favorite thing about kissing {Y}, or what do you imagine it'd be like?",
           "needs_target": true
         },
         {
@@ -4043,7 +4043,7 @@
         },
         {
           "id": "hard-truth-004",
-          "text": "Have you ever had a crush on someone here, {X}?",
+          "text": "{X}, have you ever had a crush on someone here?",
           "needs_target": false
         },
         {
@@ -4053,7 +4053,7 @@
         },
         {
           "id": "hard-truth-006",
-          "text": "What's the sexiest dream you've ever had, {X}?",
+          "text": "{X}, what's the sexiest dream you've ever had?",
           "needs_target": false
         },
         {
@@ -4063,7 +4063,7 @@
         },
         {
           "id": "hard-truth-008",
-          "text": "What's the hottest kiss you've had, {X}?",
+          "text": "{X}, what's the hottest kiss you've had?",
           "needs_target": false
         },
         {
@@ -4073,7 +4073,7 @@
         },
         {
           "id": "hard-truth-010",
-          "text": "Have you ever sent a flirty picture, {X}?",
+          "text": "{X}, have you ever sent a flirty picture?",
           "needs_target": false
         },
         {
@@ -4083,7 +4083,7 @@
         },
         {
           "id": "hard-truth-012",
-          "text": "What's the sexiest accent, {X}?",
+          "text": "{X}, what's the sexiest accent?",
           "needs_target": false
         },
         {
@@ -4093,7 +4093,7 @@
         },
         {
           "id": "hard-truth-014",
-          "text": "Have you ever been caught making out, {X}?",
+          "text": "{X}, have you ever been caught making out?",
           "needs_target": false
         },
         {
@@ -4103,7 +4103,7 @@
         },
         {
           "id": "hard-truth-016",
-          "text": "What would you do if you were left alone with {Y}, {X}?",
+          "text": "{X}, what would you do if you were left alone with {Y}?",
           "needs_target": true
         },
         {
@@ -4113,7 +4113,7 @@
         },
         {
           "id": "hard-truth-018",
-          "text": "What's your most flirtatious text, {X}?",
+          "text": "{X}, what's your most flirtatious text?",
           "needs_target": false
         },
         {
@@ -4123,7 +4123,7 @@
         },
         {
           "id": "hard-truth-020",
-          "text": "Have you ever fantasized about someone here, {X}?",
+          "text": "{X}, have you ever fantasized about someone here?",
           "needs_target": false
         },
         {
@@ -4133,7 +4133,7 @@
         },
         {
           "id": "hard-truth-022",
-          "text": "What's the sexiest thing {Y} has done without realizing, {X}?",
+          "text": "{X}, what's the sexiest thing {Y} has done without realizing?",
           "needs_target": true
         },
         {
@@ -4143,7 +4143,7 @@
         },
         {
           "id": "hard-truth-024",
-          "text": "Do you prefer a gentle kiss or a passionate one, {X}?",
+          "text": "{X}, do you prefer a gentle kiss or a passionate one?",
           "needs_target": false
         },
         {
@@ -4153,7 +4153,7 @@
         },
         {
           "id": "hard-truth-026",
-          "text": "What's the sexiest place you've been kissed, {X}?",
+          "text": "{X}, what's the sexiest place you've been kissed?",
           "needs_target": false
         },
         {
@@ -4163,7 +4163,7 @@
         },
         {
           "id": "hard-truth-028",
-          "text": "What's your favorite thing to wear to feel sexy, {X}?",
+          "text": "{X}, what's your favorite thing to wear to feel sexy?",
           "needs_target": false
         },
         {
@@ -4173,7 +4173,7 @@
         },
         {
           "id": "hard-truth-030",
-          "text": "Have you ever been so attracted to someone you couldn't speak, {X}?",
+          "text": "{X}, have you ever been so attracted to someone you couldn't speak?",
           "needs_target": false
         },
         {
@@ -4183,7 +4183,7 @@
         },
         {
           "id": "hard-truth-032",
-          "text": "What would you do if {Y} kissed you right now, {X}?",
+          "text": "{X}, what would you do if {Y} kissed you right now?",
           "needs_target": true
         },
         {
@@ -4193,7 +4193,7 @@
         },
         {
           "id": "hard-truth-034",
-          "text": "Have you ever had a one-night stand, {X}?",
+          "text": "{X}, have you ever had a one-night stand?",
           "needs_target": false
         },
         {
@@ -4203,7 +4203,7 @@
         },
         {
           "id": "hard-truth-036",
-          "text": "What's the biggest lie you've told to impress someone, {X}?",
+          "text": "{X}, what's the biggest lie you've told to impress someone?",
           "needs_target": false
         },
         {
@@ -4213,7 +4213,7 @@
         },
         {
           "id": "hard-truth-038",
-          "text": "What's the most attractive thing about {Y}'s voice, {X}?",
+          "text": "{X}, what's the most attractive thing about {Y}'s voice?",
           "needs_target": true
         },
         {
@@ -4223,7 +4223,7 @@
         },
         {
           "id": "hard-truth-040",
-          "text": "Have you ever had a hookup you regret, {X}?",
+          "text": "{X}, have you ever had a hookup you regret?",
           "needs_target": false
         },
         {
@@ -4233,7 +4233,7 @@
         },
         {
           "id": "hard-truth-042",
-          "text": "What's your favorite way to be seduced, {X}?",
+          "text": "{X}, what's your favorite way to be seduced?",
           "needs_target": false
         },
         {
@@ -4243,7 +4243,7 @@
         },
         {
           "id": "hard-truth-044",
-          "text": "Have you ever had a dream about {Y}, {X}?",
+          "text": "{X}, have you ever had a dream about {Y}?",
           "needs_target": true
         },
         {
@@ -4253,7 +4253,7 @@
         },
         {
           "id": "hard-truth-046",
-          "text": "What's your best seduction move, {X}?",
+          "text": "{X}, what's your best seduction move?",
           "needs_target": false
         },
         {
@@ -4263,7 +4263,7 @@
         },
         {
           "id": "hard-truth-048",
-          "text": "What's the longest make-out session you've had, {X}?",
+          "text": "{X}, what's the longest make-out session you've had?",
           "needs_target": false
         },
         {
@@ -4273,7 +4273,7 @@
         },
         {
           "id": "hard-truth-050",
-          "text": "Have you ever been attracted to a friend's partner, {X}?",
+          "text": "{X}, have you ever been attracted to a friend's partner?",
           "needs_target": false
         },
         {
@@ -4283,7 +4283,7 @@
         },
         {
           "id": "hard-truth-052",
-          "text": "What do you think {Y} looks like in the morning, {X}?",
+          "text": "{X}, what do you think {Y} looks like in the morning?",
           "needs_target": true
         },
         {
@@ -4293,7 +4293,7 @@
         },
         {
           "id": "hard-truth-054",
-          "text": "What's the sexiest compliment you've received, {X}?",
+          "text": "{X}, what's the sexiest compliment you've received?",
           "needs_target": false
         },
         {
@@ -4303,7 +4303,7 @@
         },
         {
           "id": "hard-truth-056",
-          "text": "Have you ever kissed someone in a car, {X}?",
+          "text": "{X}, have you ever kissed someone in a car?",
           "needs_target": false
         },
         {
@@ -4313,7 +4313,7 @@
         },
         {
           "id": "hard-truth-058",
-          "text": "What would you do on a romantic night in with {Y}, {X}?",
+          "text": "{X}, what would you do on a romantic night in with {Y}?",
           "needs_target": true
         },
         {
@@ -4323,7 +4323,7 @@
         },
         {
           "id": "hard-truth-060",
-          "text": "Have you ever slept in someone else's bed, {X}?",
+          "text": "{X}, have you ever slept in someone else's bed?",
           "needs_target": false
         },
         {
@@ -4333,7 +4333,7 @@
         },
         {
           "id": "hard-truth-062",
-          "text": "What would you do if you woke up next to {Y}, {X}?",
+          "text": "{X}, what would you do if you woke up next to {Y}?",
           "needs_target": true
         },
         {
@@ -4343,7 +4343,7 @@
         },
         {
           "id": "hard-truth-064",
-          "text": "What's the sexiest thing about a bad boy or bad girl, {X}?",
+          "text": "{X}, what's the sexiest thing about a bad boy or bad girl?",
           "needs_target": false
         },
         {
@@ -4353,7 +4353,7 @@
         },
         {
           "id": "hard-truth-066",
-          "text": "Have you ever stolen a kiss, {X}?",
+          "text": "{X}, have you ever stolen a kiss?",
           "needs_target": false
         },
         {
@@ -4363,7 +4363,7 @@
         },
         {
           "id": "hard-truth-068",
-          "text": "What's the most intimate moment you've had with a friend, {X}?",
+          "text": "{X}, what's the most intimate moment you've had with a friend?",
           "needs_target": false
         },
         {
@@ -4373,7 +4373,7 @@
         },
         {
           "id": "hard-truth-070",
-          "text": "Have you ever had a \"friends-with-benefits\" situation, {X}?",
+          "text": "{X}, have you ever had a \"friends-with-benefits\" situation?",
           "needs_target": false
         },
         {
@@ -4383,7 +4383,7 @@
         },
         {
           "id": "hard-truth-072",
-          "text": "What's the hottest scene in a movie, {X}?",
+          "text": "{X}, what's the hottest scene in a movie?",
           "needs_target": false
         },
         {
@@ -4393,7 +4393,7 @@
         },
         {
           "id": "hard-truth-074",
-          "text": "What do you do when you're attracted to someone, {X}?",
+          "text": "{X}, what do you do when you're attracted to someone?",
           "needs_target": false
         },
         {
@@ -4403,7 +4403,7 @@
         },
         {
           "id": "hard-truth-076",
-          "text": "What's the most daring thing you'd do for a kiss, {X}?",
+          "text": "{X}, what's the most daring thing you'd do for a kiss?",
           "needs_target": false
         },
         {
@@ -4413,7 +4413,7 @@
         },
         {
           "id": "hard-truth-078",
-          "text": "Have you ever gone home with someone you just met, {X}?",
+          "text": "{X}, have you ever gone home with someone you just met?",
           "needs_target": false
         },
         {
@@ -4423,7 +4423,7 @@
         },
         {
           "id": "hard-truth-080",
-          "text": "What's your favorite flirty line, {X}?",
+          "text": "{X}, what's your favorite flirty line?",
           "needs_target": false
         },
         {
@@ -4433,7 +4433,7 @@
         },
         {
           "id": "hard-truth-082",
-          "text": "Have you ever skipped a date to hook up, {X}?",
+          "text": "{X}, have you ever skipped a date to hook up?",
           "needs_target": false
         },
         {
@@ -4443,7 +4443,7 @@
         },
         {
           "id": "hard-truth-084",
-          "text": "What's your favorite thing to do on a steamy night, {X}?",
+          "text": "{X}, what's your favorite thing to do on a steamy night?",
           "needs_target": false
         },
         {
@@ -4453,7 +4453,7 @@
         },
         {
           "id": "hard-truth-086",
-          "text": "Have you ever been caught checking someone out, {X}?",
+          "text": "{X}, have you ever been caught checking someone out?",
           "needs_target": false
         },
         {
@@ -4463,7 +4463,7 @@
         },
         {
           "id": "hard-truth-088",
-          "text": "What's the best part of making out, {X}?",
+          "text": "{X}, what's the best part of making out?",
           "needs_target": false
         },
         {
@@ -4473,7 +4473,7 @@
         },
         {
           "id": "hard-truth-090",
-          "text": "What's your hottest first-date story, {X}?",
+          "text": "{X}, what's your hottest first-date story?",
           "needs_target": false
         },
         {
@@ -4483,7 +4483,7 @@
         },
         {
           "id": "hard-truth-092",
-          "text": "Have you ever kissed more than one person in a night, {X}?",
+          "text": "{X}, have you ever kissed more than one person in a night?",
           "needs_target": false
         },
         {
@@ -4493,7 +4493,7 @@
         },
         {
           "id": "hard-truth-094",
-          "text": "What's the most attractive way to be touched, {X}?",
+          "text": "{X}, what's the most attractive way to be touched?",
           "needs_target": false
         },
         {
@@ -4503,7 +4503,7 @@
         },
         {
           "id": "hard-truth-096",
-          "text": "Do you prefer teasing or direct approaches, {X}?",
+          "text": "{X}, do you prefer teasing or direct approaches?",
           "needs_target": false
         },
         {
@@ -4513,7 +4513,7 @@
         },
         {
           "id": "hard-truth-098",
-          "text": "What's your most intense attraction, {X}?",
+          "text": "{X}, what's your most intense attraction?",
           "needs_target": false
         },
         {
@@ -4523,7 +4523,7 @@
         },
         {
           "id": "hard-truth-100",
-          "text": "What would you do if you and {Y} were stuck in an elevator, {X}?",
+          "text": "{X}, what would you do if you and {Y} were stuck in an elevator?",
           "needs_target": true
         },
         {
@@ -4533,7 +4533,7 @@
         },
         {
           "id": "hard-truth-102",
-          "text": "What's the sexiest thing you've ever said, {X}?",
+          "text": "{X}, what's the sexiest thing you've ever said?",
           "needs_target": false
         },
         {
@@ -4543,7 +4543,7 @@
         },
         {
           "id": "hard-truth-104",
-          "text": "Have you ever kissed someone to make someone else jealous, {X}?",
+          "text": "{X}, have you ever kissed someone to make someone else jealous?",
           "needs_target": false
         },
         {
@@ -4553,7 +4553,7 @@
         },
         {
           "id": "hard-truth-106",
-          "text": "What's the most tempting person in this room, {X}?",
+          "text": "{X}, what's the most tempting person in this room?",
           "needs_target": false
         },
         {
@@ -4563,7 +4563,7 @@
         },
         {
           "id": "hard-truth-108",
-          "text": "What do you find hottest about someone's confidence, {X}?",
+          "text": "{X}, what do you find hottest about someone's confidence?",
           "needs_target": false
         },
         {
@@ -4573,7 +4573,7 @@
         },
         {
           "id": "hard-truth-110",
-          "text": "Have you ever been in a love triangle, {X}?",
+          "text": "{X}, have you ever been in a love triangle?",
           "needs_target": false
         },
         {
@@ -4583,7 +4583,7 @@
         },
         {
           "id": "hard-truth-112",
-          "text": "What would you do with {Y} in a dark movie theater, {X}?",
+          "text": "{X}, what would you do with {Y} in a dark movie theater?",
           "needs_target": true
         },
         {
@@ -4593,7 +4593,7 @@
         },
         {
           "id": "hard-truth-114",
-          "text": "What's your sexiest memory, {X}?",
+          "text": "{X}, what's your sexiest memory?",
           "needs_target": false
         },
         {
@@ -4603,7 +4603,7 @@
         },
         {
           "id": "hard-truth-116",
-          "text": "Have you ever made out in a public place, {X}?",
+          "text": "{X}, have you ever made out in a public place?",
           "needs_target": false
         },
         {
@@ -4613,7 +4613,7 @@
         },
         {
           "id": "hard-truth-118",
-          "text": "What would you wear if you wanted {Y} to melt, {X}?",
+          "text": "{X}, what would you wear if you wanted {Y} to melt?",
           "needs_target": true
         },
         {
@@ -4623,7 +4623,7 @@
         },
         {
           "id": "hard-truth-120",
-          "text": "What's the most seductive thing you can do with just your eyes, {X}?",
+          "text": "{X}, what's the most seductive thing you can do with just your eyes?",
           "needs_target": false
         },
         {
@@ -4633,7 +4633,7 @@
         },
         {
           "id": "hard-truth-122",
-          "text": "What's your favorite way to get someone's attention, {X}?",
+          "text": "{X}, what's your favorite way to get someone's attention?",
           "needs_target": false
         },
         {
@@ -4643,7 +4643,7 @@
         },
         {
           "id": "hard-truth-124",
-          "text": "What's the bravest thing you've done for a kiss, {X}?",
+          "text": "{X}, what's the bravest thing you've done for a kiss?",
           "needs_target": false
         },
         {
@@ -4653,7 +4653,7 @@
         },
         {
           "id": "hard-truth-126",
-          "text": "Have you ever had a \"forbidden\" crush, {X}?",
+          "text": "{X}, have you ever had a \"forbidden\" crush?",
           "needs_target": false
         },
         {
@@ -4663,7 +4663,7 @@
         },
         {
           "id": "hard-truth-128",
-          "text": "What's your most seductive talent, {X}?",
+          "text": "{X}, what's your most seductive talent?",
           "needs_target": false
         },
         {
@@ -4673,7 +4673,7 @@
         },
         {
           "id": "hard-truth-130",
-          "text": "What do you think about when you can't sleep, {X}?",
+          "text": "{X}, what do you think about when you can't sleep?",
           "needs_target": false
         },
         {
@@ -4683,7 +4683,7 @@
         },
         {
           "id": "hard-truth-132",
-          "text": "Have you ever fallen for someone because of a kiss, {X}?",
+          "text": "{X}, have you ever fallen for someone because of a kiss?",
           "needs_target": false
         },
         {
@@ -4693,7 +4693,7 @@
         },
         {
           "id": "hard-truth-134",
-          "text": "What's the naughtiest thought you've had today, {X}?",
+          "text": "{X}, what's the naughtiest thought you've had today?",
           "needs_target": false
         },
         {
@@ -4703,7 +4703,7 @@
         },
         {
           "id": "hard-truth-136",
-          "text": "Do you like being the pursuer or the pursued, {X}?",
+          "text": "{X}, do you like being the pursuer or the pursued?",
           "needs_target": false
         },
         {
@@ -4713,7 +4713,7 @@
         },
         {
           "id": "hard-truth-138",
-          "text": "Have you ever kissed someone and instantly known, {X}?",
+          "text": "{X}, have you ever kissed someone and instantly known?",
           "needs_target": false
         },
         {
@@ -4723,7 +4723,7 @@
         },
         {
           "id": "hard-truth-140",
-          "text": "What's the sexiest thing {Y} could say to you, {X}?",
+          "text": "{X}, what's the sexiest thing {Y} could say to you?",
           "needs_target": true
         },
         {
@@ -4733,7 +4733,7 @@
         },
         {
           "id": "hard-truth-142",
-          "text": "What's your idea of a seductive evening, {X}?",
+          "text": "{X}, what's your idea of a seductive evening?",
           "needs_target": false
         },
         {
@@ -4743,7 +4743,7 @@
         },
         {
           "id": "hard-truth-144",
-          "text": "Have you ever had a \"wrong text\" that got steamy, {X}?",
+          "text": "{X}, have you ever had a \"wrong text\" that got steamy?",
           "needs_target": false
         },
         {
@@ -4753,7 +4753,7 @@
         },
         {
           "id": "hard-truth-146",
-          "text": "What's the sexiest compliment you could give {Y}, {X}?",
+          "text": "{X}, what's the sexiest compliment you could give {Y}?",
           "needs_target": true
         },
         {
@@ -4763,7 +4763,7 @@
         },
         {
           "id": "hard-truth-148",
-          "text": "What do you find irresistible in a partner's touch, {X}?",
+          "text": "{X}, what do you find irresistible in a partner's touch?",
           "needs_target": false
         },
         {
@@ -4773,7 +4773,7 @@
         },
         {
           "id": "hard-truth-150",
-          "text": "Have you ever flirted just to see what would happen, {X}?",
+          "text": "{X}, have you ever flirted just to see what would happen?",
           "needs_target": false
         },
         {
@@ -4783,7 +4783,7 @@
         },
         {
           "id": "hard-truth-152",
-          "text": "What's your riskiest flirt, {X}?",
+          "text": "{X}, what's your riskiest flirt?",
           "needs_target": false
         },
         {
@@ -4793,7 +4793,7 @@
         },
         {
           "id": "hard-truth-154",
-          "text": "Have you ever sent a risky text and regretted it, {X}?",
+          "text": "{X}, have you ever sent a risky text and regretted it?",
           "needs_target": false
         },
         {
@@ -4803,7 +4803,7 @@
         },
         {
           "id": "hard-truth-156",
-          "text": "What's the sexiest thing about someone's hands, {X}?",
+          "text": "{X}, what's the sexiest thing about someone's hands?",
           "needs_target": false
         },
         {
@@ -4813,7 +4813,7 @@
         },
         {
           "id": "hard-truth-158",
-          "text": "Do you think there's chemistry between you and {Y}, {X}?",
+          "text": "{X}, do you think there's chemistry between you and {Y}?",
           "needs_target": true
         },
         {
@@ -4823,7 +4823,7 @@
         },
         {
           "id": "hard-truth-160",
-          "text": "What would you want {Y} to do right now, {X}?",
+          "text": "{X}, what would you want {Y} to do right now?",
           "needs_target": true
         },
         {
@@ -4833,7 +4833,7 @@
         },
         {
           "id": "hard-truth-162",
-          "text": "Have you ever kissed someone at midnight, {X}?",
+          "text": "{X}, have you ever kissed someone at midnight?",
           "needs_target": false
         },
         {
@@ -4843,7 +4843,7 @@
         },
         {
           "id": "hard-truth-164",
-          "text": "What's your sexiest talent, {X}?",
+          "text": "{X}, what's your sexiest talent?",
           "needs_target": false
         },
         {
@@ -4853,7 +4853,7 @@
         },
         {
           "id": "hard-truth-166",
-          "text": "Have you ever slow danced with someone and felt the tension, {X}?",
+          "text": "{X}, have you ever slow danced with someone and felt the tension?",
           "needs_target": false
         },
         {
@@ -4863,7 +4863,7 @@
         },
         {
           "id": "hard-truth-168",
-          "text": "What's the boldest move you've made on someone, {X}?",
+          "text": "{X}, what's the boldest move you've made on someone?",
           "needs_target": false
         },
         {
@@ -4873,7 +4873,7 @@
         },
         {
           "id": "hard-truth-170",
-          "text": "Have you ever kissed in a public place, {X}?",
+          "text": "{X}, have you ever kissed in a public place?",
           "needs_target": false
         },
         {
@@ -4883,7 +4883,7 @@
         },
         {
           "id": "hard-truth-172",
-          "text": "What's the hottest compliment you've given, {X}?",
+          "text": "{X}, what's the hottest compliment you've given?",
           "needs_target": false
         },
         {
@@ -4893,7 +4893,7 @@
         },
         {
           "id": "hard-truth-174",
-          "text": "Have you ever been in a steamy elevator moment, {X}?",
+          "text": "{X}, have you ever been in a steamy elevator moment?",
           "needs_target": false
         },
         {
@@ -4903,7 +4903,7 @@
         },
         {
           "id": "hard-truth-176",
-          "text": "What would you do if {Y} wanted to cuddle all night, {X}?",
+          "text": "{X}, what would you do if {Y} wanted to cuddle all night?",
           "needs_target": true
         },
         {
@@ -4913,7 +4913,7 @@
         },
         {
           "id": "hard-truth-178",
-          "text": "Have you ever taken a flirty photo for someone, {X}?",
+          "text": "{X}, have you ever taken a flirty photo for someone?",
           "needs_target": false
         },
         {
@@ -4923,7 +4923,7 @@
         },
         {
           "id": "hard-truth-180",
-          "text": "What's the wildest place you've almost been caught kissing, {X}?",
+          "text": "{X}, what's the wildest place you've almost been caught kissing?",
           "needs_target": false
         },
         {
@@ -4933,7 +4933,7 @@
         },
         {
           "id": "hard-truth-182",
-          "text": "What would you do if {Y} took your hand and led you away, {X}?",
+          "text": "{X}, what would you do if {Y} took your hand and led you away?",
           "needs_target": true
         },
         {
@@ -4943,7 +4943,7 @@
         },
         {
           "id": "hard-truth-184",
-          "text": "Have you ever danced so close it got intense, {X}?",
+          "text": "{X}, have you ever danced so close it got intense?",
           "needs_target": false
         },
         {
@@ -4953,7 +4953,7 @@
         },
         {
           "id": "hard-truth-186",
-          "text": "What's your favorite thing about being desired, {X}?",
+          "text": "{X}, what's your favorite thing about being desired?",
           "needs_target": false
         },
         {
@@ -4963,7 +4963,7 @@
         },
         {
           "id": "hard-truth-188",
-          "text": "Have you ever kissed someone with a lot of tension in the air, {X}?",
+          "text": "{X}, have you ever kissed someone with a lot of tension in the air?",
           "needs_target": false
         },
         {
@@ -4973,7 +4973,7 @@
         },
         {
           "id": "hard-truth-190",
-          "text": "What would your steamy playlist have in it, {X}?",
+          "text": "{X}, what would your steamy playlist have in it?",
           "needs_target": false
         },
         {
@@ -4983,7 +4983,7 @@
         },
         {
           "id": "hard-truth-192",
-          "text": "What's your biggest flirting weakness, {X}?",
+          "text": "{X}, what's your biggest flirting weakness?",
           "needs_target": false
         },
         {
@@ -4993,7 +4993,7 @@
         },
         {
           "id": "hard-truth-194",
-          "text": "Have you ever made out in a car, {X}?",
+          "text": "{X}, have you ever made out in a car?",
           "needs_target": false
         },
         {
@@ -5003,7 +5003,7 @@
         },
         {
           "id": "hard-truth-196",
-          "text": "What's the sexiest thing about the way {Y} dresses, {X}?",
+          "text": "{X}, what's the sexiest thing about the way {Y} dresses?",
           "needs_target": true
         },
         {
@@ -5013,7 +5013,7 @@
         },
         {
           "id": "hard-truth-198",
-          "text": "Have you ever had a heated moment with a coworker or classmate, {X}?",
+          "text": "{X}, have you ever had a heated moment with a coworker or classmate?",
           "needs_target": false
         },
         {
@@ -5023,7 +5023,7 @@
         },
         {
           "id": "hard-truth-200",
-          "text": "What's your most flirty confession, {X}?",
+          "text": "{X}, what's your most flirty confession?",
           "needs_target": false
         }
       ],

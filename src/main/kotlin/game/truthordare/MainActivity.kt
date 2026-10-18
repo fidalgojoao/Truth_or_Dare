@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity() {
     private var textToSpeech: TextToSpeech? = null
     private var currentCard: Card? = null
     private var homeScrollY = 0
+    private var playersPanelExpanded = true
+    private var levelsPanelExpanded = true
     private lateinit var billingClient: BillingClient
     private val prices = mutableMapOf<String, String>()
     private val products = mutableMapOf<String, ProductDetails>()
@@ -260,6 +262,22 @@ class MainActivity : ComponentActivity() {
     private fun card(root: LinearLayout, margin: Int = 10): LinearLayout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(16),dp(16),dp(16),dp(16)); root.addView(this,lp(-1,-2,margin).apply { leftMargin=dp(16); rightMargin=dp(16) }) }
     private fun divider(root: LinearLayout, n: Int = 14) { root.addView(Space(this), lp(-1, dp(n),0)) }
     private fun mainMargin(view:View) { (view.layoutParams as? LinearLayout.LayoutParams)?.let { it.leftMargin=dp(16); it.rightMargin=dp(16); view.layoutParams=it } }
+    private fun collapsibleHeader(title:String, expanded:Boolean, toggle:()->Unit):FrameLayout = FrameLayout(this).apply {
+        addView(label(title,13,true,muted,Gravity.CENTER_VERTICAL),FrameLayout.LayoutParams(-1,dp(36),Gravity.CENTER_VERTICAL).apply { rightMargin=dp(36) })
+        val arrow=ImageButton(this@MainActivity).apply {
+            setImageResource(R.drawable.ic_expand_more)
+            setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN)
+            background=null
+            setPadding(dp(7),dp(7),dp(7),dp(7))
+            rotation=if(expanded)180f else 0f
+            contentDescription=if(expanded)"Collapse $title" else "Expand $title"
+            setOnClickListener {
+                isEnabled=false
+                animate().rotation(if(expanded)0f else 180f).setDuration(220).setInterpolator(DecelerateInterpolator()).withEndAction { toggle() }.start()
+            }
+        }
+        addView(arrow,FrameLayout.LayoutParams(dp(36),dp(36),Gravity.END or Gravity.CENTER_VERTICAL))
+    }
 
     private fun applyThemeAndHome() { showHome() }
     private fun showHome() {
@@ -281,11 +299,12 @@ class MainActivity : ComponentActivity() {
         copy.addView(label("Truth or Dare",18,true))
         copy.addView(label("MAKE TONIGHT A STORY",9,true,accent).apply { letterSpacing=.14f })
         brand.addView(copy,weight(1f))
-        val gear=ImageButton(this).apply { setImageResource(R.drawable.ic_settings_gear); setColorFilter(ink,android.graphics.PorterDuff.Mode.SRC_IN); background=null; setPadding(dp(8),dp(8),dp(8),dp(8)); contentDescription="Settings"; setOnClickListener { openScreen("settings"){showSettings()} } }; brand.addView(gear,lp(dp(46),dp(46),0))
+        val gear=ImageButton(this).apply { setImageResource(R.drawable.ic_settings_gear); setColorFilter(onAccent(),android.graphics.PorterDuff.Mode.SRC_IN); background=shape(accent,23); setPadding(dp(11),dp(11),dp(11),dp(11)); contentDescription="Settings"; setOnClickListener { openScreen("settings"){showSettings()} } }; brand.addView(gear,lp(dp(46),dp(46),0))
         root.addView(brand,LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(16),dp(4),dp(16),dp(15)) })
 
         val playersPanel=card(root,0).apply { setPadding(dp(16),dp(16),dp(16),dp(16)) }; (playersPanel.layoutParams as LinearLayout.LayoutParams).setMargins(dp(16),0,dp(16),0)
-        playersPanel.addView(label("PLAYERS: ${players.size}",13,true,muted))
+        playersPanel.addView(collapsibleHeader("PLAYERS: ${players.size}",playersPanelExpanded){playersPanelExpanded=!playersPanelExpanded;showHome()})
+        if(playersPanelExpanded) {
         playersPanel.addView(label("Add everyone, then edit their interaction preferences any time.",15,false,muted).apply { setPadding(0,dp(8),0,dp(8)) })
         if(players.size<2) playersPanel.addView(label(if(players.isEmpty()) "No players added yet. Add at least 2 players to start the game." else "Add 1 more player to start the game.",14,true,accent).apply { setPadding(0,0,0,dp(10)); setLineSpacing(dp(2).toFloat(),1.03f) })
         val playerGrid=GridLayout(this).apply { columnCount=2; useDefaultMargins=false }
@@ -304,10 +323,12 @@ class MainActivity : ComponentActivity() {
         }
         playersPanel.addView(playerGrid,lp(-1,-2,0))
         playersPanel.addView(add,lp(-1,dp(52),7))
+        }
 
         divider(root,15)
         val levels=card(root,0).apply { setPadding(dp(16),dp(12),dp(16),dp(12)) }; (levels.layoutParams as LinearLayout.LayoutParams).setMargins(dp(16),0,dp(16),0)
-        levels.addView(label("CHOOSE A LEVEL",13,true,muted).apply { setPadding(0,0,0,dp(7)) })
+        levels.addView(collapsibleHeader("CHOOSE A LEVEL",levelsPanelExpanded){levelsPanelExpanded=!levelsPanelExpanded;showHome()})
+        if(levelsPanelExpanded) {
         val grid=GridLayout(this).apply { columnCount=2; useDefaultMargins=false }
         val lockedFill=ColorUtils.blendARGB(surface,outline,.55f)
         fun levelCell(key:String, title:String, detail:String, locked:Boolean) {
@@ -325,7 +346,8 @@ class MainActivity : ComponentActivity() {
         custom.addView(label("My truths and dares ✏️",13,true,if(customSelected)onAccent() else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
         custom.addView(label(if(customLocked)"Premium  🔒" else "Your custom cards",11,false,if(customSelected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
         grid.addView(custom,GridLayout.LayoutParams().apply{width=-1;height=dp(66);columnSpec=GridLayout.spec(0,2);setMargins(0,dp(2),0,dp(2))});levels.addView(grid)
-        if(!premium) root.addView(label("Hard, Extreme and My truths and dares unlock with a one-time Play purchase.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
+        }
+        if(!premium && levelsPanelExpanded) root.addView(label("Hard, Extreme and My truths and dares unlock with a one-time Play purchase.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
     private fun editPlayer(index:Int, isNew:Boolean=false) {
         val player=players[index]; val dialog=Dialog(this); var committed=!isNew

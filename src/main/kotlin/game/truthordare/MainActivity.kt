@@ -49,6 +49,7 @@ class MainActivity : ComponentActivity() {
     private val ownedProductIds = mutableSetOf<String>()
     private var offerAfterPrivacy = false
     private var firstOfferShown = false
+    private var restorePendingAfterConnection = false
     private var round = 1
     private var turn = 0
     private val remainingTurnIndices = mutableSetOf<Int>()
@@ -313,7 +314,7 @@ class MainActivity : ComponentActivity() {
         divider(root,7)
         settingsRow(root,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}})
         settingsRow(root,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}})
-        settingsRow(root,"about","About app","Privacy, rules, info",{openScreen("about"){showAbout()}})
+        settingsRow(root,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}})
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,showArrow:Boolean=true){
         val c=card(root,8).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,24,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }; mainMargin(c)
         val iconBackground=when(icon){ "appearance"->Color.rgb(54,31,99); "gameplay"->Color.rgb(20,62,92); "about"->Color.rgb(89,18,70); else->accent }
@@ -383,7 +384,7 @@ class MainActivity : ComponentActivity() {
         divider(root,7)
         settingsRow(root,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},false)
         settingsRow(root,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},false)
-        settingsRow(root,"✦","About Truth or Dare","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},false)
+        settingsRow(root,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},false)
         settingsRow(root,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},false)
     }    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
@@ -398,7 +399,8 @@ class MainActivity : ComponentActivity() {
     private fun showGameRules(){ informationPage("Game rules","• Add at least two players and set each player's gender and interaction preferences.\n\n• A player is chosen at random. The same player cannot be chosen twice in a row; with four or more players, everyone is selected before anyone repeats.\n\n• Choose Truth or Dare. After two Truth choices in a row, that player must choose Dare next time.\n\n• Targeted prompts follow the active player's saved preference: Men, Women, Men & women, or only their selected specific players.\n\n• Every prompt can be passed or skipped. Keep the game respectful, consensual, and free of physical harm.") }
     private fun privacyText():String = "Effective date: 15 October 2026\n\nTruth or Dare is designed to work locally on your device. The app stores player names, preferences, selected level, custom cards, and game progress only in local app storage so your group can resume later.\n\nWe do not collect, sell, share, or transmit personal information. We do not use advertising, analytics, accounts, location, contacts, camera, microphone, nearby devices, or Bluetooth.\n\nGoogle Play Billing is used only when you choose to buy the optional Premium Levels one-time product. Google processes payment information under its own privacy policy; this app does not receive or store payment card details.\n\nYou can delete local game information at any time by clearing the app's storage or uninstalling the app.\n\nIf this policy changes, the updated version will be included in the app and release notes."
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
-    private fun showAppInformation(){ informationPage("About app","App version\n0.3.8\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
+    private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
+    private fun showAppInformation(){ informationPage("About app","App version\n${installedVersion()}\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(18),dp(18),dp(18),dp(18)) }
@@ -583,12 +585,22 @@ class MainActivity : ComponentActivity() {
             customCards.addAll(imported); saveState(); Toast.makeText(this,"Imported ${imported.size} cards.",Toast.LENGTH_SHORT).show(); showCustomCards()
         } catch(e:Exception) { Toast.makeText(this,"Could not read that card file.",Toast.LENGTH_LONG).show() }
     }
-    private fun setupBilling(){
-        billingClient=BillingClient.newBuilder(this).setListener { _, purchases -> handlePurchases(purchases ?: emptyList()) }.enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()).build()
+    private fun connectBilling(){
         billingClient.startConnection(object: BillingClientStateListener {
-            override fun onBillingSetupFinished(result:BillingResult){ if(result.responseCode==BillingClient.BillingResponseCode.OK){ queryProducts(); queryOwned(false) { if(offerAfterPrivacy) showFirstOffer() } } }
+            override fun onBillingSetupFinished(result:BillingResult){
+                if(result.responseCode==BillingClient.BillingResponseCode.OK){
+                    queryProducts()
+                    val announceRestore=restorePendingAfterConnection
+                    restorePendingAfterConnection=false
+                    queryOwned(announceRestore) { if(offerAfterPrivacy) showFirstOffer() }
+                }
+            }
             override fun onBillingServiceDisconnected() {}
         })
+    }
+    private fun setupBilling(){
+        billingClient=BillingClient.newBuilder(this).setListener { _, purchases -> handlePurchases(purchases ?: emptyList()) }.enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()).build()
+        connectBilling()
     }
     private fun queryProducts(){
         fun query(ids:List<String>,type:String){
@@ -603,7 +615,11 @@ class MainActivity : ComponentActivity() {
     }
     private fun queryOwned(announce:Boolean=false, onComplete:()->Unit={}){
         if(!::billingClient.isInitialized || !billingClient.isReady){
-            if(announce) Toast.makeText(this,"Google Play is connecting. Try restoring again in a moment.",Toast.LENGTH_LONG).show()
+            if(announce) {
+                restorePendingAfterConnection=true
+                Toast.makeText(this,"Connecting to Google Play to restore purchases…",Toast.LENGTH_SHORT).show()
+            }
+            if(::billingClient.isInitialized) connectBilling()
             return
         }
         val restored=mutableListOf<Purchase>()

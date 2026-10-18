@@ -286,22 +286,28 @@ class MainActivity : ComponentActivity() {
             fillPaint.color=ColorUtils.blendARGB(ColorUtils.blendARGB(surface,outline,.20f),accent,progress)
             canvas.drawRoundRect(track,trackHeight/2f,trackHeight/2f,fillPaint)
             if(progress<.99f){ strokePaint.color=outline;canvas.drawRoundRect(track,trackHeight/2f,trackHeight/2f,strokePaint) }
-            val radius=dp(8)+(dp(12)-dp(8))*progress
-            val startX=left+dp(15)
+            // Material 3's "icons in both states" configuration keeps the
+            // large thumb in both positions and swaps the icon directly.
+            val radius=dp(12).toFloat()
+            val startX=left+dp(16)
             val endX=left+trackWidth-dp(16)
             val cx=startX+(endX-startX)*progress
             val cy=top+trackHeight/2f
-            fillPaint.color=ColorUtils.blendARGB(muted,onAccent(),progress)
+            val thumbColor=ColorUtils.blendARGB(muted,onAccent(),progress)
+            fillPaint.color=thumbColor
             canvas.drawCircle(cx,cy,radius,fillPaint)
-            if(progress>.55f){
+            iconPaint.alpha=255
+            if(checked){
                 iconPaint.color=accent
-                val a=(progress-.55f)/.45f
-                iconPaint.alpha=(255*a).toInt().coerceIn(0,255)
                 val checkX=cx-resources.displayMetrics.density*.5f
                 val checkY=cy+resources.displayMetrics.density*.5f
                 canvas.drawLine(checkX-dp(5),checkY,checkX-dp(1),checkY+dp(4),iconPaint)
                 canvas.drawLine(checkX-dp(1),checkY+dp(4),checkX+dp(6),checkY-dp(5),iconPaint)
-                iconPaint.alpha=255
+            }else{
+                iconPaint.color=contrastOn(thumbColor)
+                val inset=dp(4).toFloat()
+                canvas.drawLine(cx-inset,cy-inset,cx+inset,cy+inset,iconPaint)
+                canvas.drawLine(cx+inset,cy-inset,cx-inset,cy+inset,iconPaint)
             }
         }
     }

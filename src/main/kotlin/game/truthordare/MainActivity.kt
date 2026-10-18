@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
     private var reverseDareTarget: Player? = null
     private var reverseDarePending = false
     private var premium = false
-    private val offlinePremiumWindowMs = 3L * 24L * 60L * 60L * 1000L
+    private val offlinePremiumWindowMs = 30L * 24L * 60L * 60L * 1000L
     private val premiumCacheKeyAlias = "truth_or_dare_premium_entitlement_v1"
     private val ownedProductIds = mutableSetOf<String>()
     private var offerAfterPrivacy = false

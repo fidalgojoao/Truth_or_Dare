@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
     private val ownedProductIds = mutableSetOf<String>()
     private var offerAfterPrivacy = false
     private var firstOfferShown = false
+    private var firstOfferFallback: Runnable? = null
     private var restorePendingAfterConnection = false
     private var round = 1
     private var turn = 0
@@ -216,19 +217,93 @@ class MainActivity : ComponentActivity() {
         cornerRadii = floatArrayOf(top, top, top, top, bottom, bottom, bottom, bottom)
         if (stroke > 0) setStroke(dp(stroke), strokeColor)
     }
-    private fun expressiveToggle(initial:Boolean, enabled:Boolean=true, onChanged:(Boolean)->Unit): FrameLayout {
-        var checked=initial
-        val holder=FrameLayout(this).apply { isClickable=enabled }
-        val knob=TextView(this).apply { textSize=26f; gravity=Gravity.CENTER; typeface=android.graphics.Typeface.DEFAULT_BOLD }
-        fun render(){
-            holder.background=shape(if(checked)accent else ColorUtils.blendARGB(surface,outline,.62f),20,if(checked)0 else 2)
-            knob.text=if(checked)"✓" else "×"
-            knob.setTextColor(if(!checked && isDark()) Color.BLACK else if(checked)accent else ink)
-            knob.background=shape(if(checked)surface else muted,16)
-            knob.alpha=if(enabled)1f else .55f
-            knob.layoutParams=FrameLayout.LayoutParams(dp(32),dp(32),if(checked)Gravity.END or Gravity.CENTER_VERTICAL else Gravity.START or Gravity.CENTER_VERTICAL).apply{setMargins(dp(4),0,dp(4),0)}
+    private inner class MaterialSwitchView(initial:Boolean, private val controlEnabled:Boolean, private val onChanged:(Boolean)->Unit):View(this@MainActivity) {
+        private var checked=initial
+        private var progress=if(initial)1f else 0f
+        private val fillPaint=Paint(Paint.ANTI_ALIAS_FLAG).apply { style=Paint.Style.FILL }
+        private val strokePaint=Paint(Paint.ANTI_ALIAS_FLAG).apply { style=Paint.Style.STROKE; strokeWidth=dp(2).toFloat() }
+        private val iconPaint=Paint(Paint.ANTI_ALIAS_FLAG).apply { style=Paint.Style.STROKE; strokeCap=Paint.Cap.ROUND; strokeJoin=Paint.Join.ROUND; strokeWidth=dp(2).toFloat() }
+        init {
+            isClickable=controlEnabled
+            isFocusable=controlEnabled
+            alpha=if(controlEnabled)1f else .38f
+            contentDescription=if(initial)"On" else "Off"
+            setOnClickListener {
+                if(!controlEnabled)return@setOnClickListener
+                checked=!checked
+                contentDescription=if(checked)"On" else "Off"
+                ValueAnimator.ofFloat(progress,if(checked)1f else 0f).apply {
+                    duration=180
+                    interpolator=DecelerateInterpolator()
+                    addUpdateListener { progress=it.animatedValue as Float;invalidate() }
+                    start()
+                }
+                onChanged(checked)
+            }
         }
-        holder.addView(knob); render(); holder.setOnClickListener{ if(enabled){ checked=!checked;render();onChanged(checked) } }; return holder
+        override fun onDraw(canvas:Canvas){
+            super.onDraw(canvas)
+            val trackWidth=min(width.toFloat(),dp(52).toFloat())
+            val trackHeight=min(height.toFloat(),dp(32).toFloat())
+            val left=(width-trackWidth)/2f
+            val top=(height-trackHeight)/2f
+            val track=RectF(left,top,left+trackWidth,top+trackHeight)
+            fillPaint.color=ColorUtils.blendARGB(ColorUtils.blendARGB(surface,outline,.20f),accent,progress)
+            canvas.drawRoundRect(track,trackHeight/2f,trackHeight/2f,fillPaint)
+            if(progress<.99f){ strokePaint.color=outline;canvas.drawRoundRect(track,trackHeight/2f,trackHeight/2f,strokePaint) }
+            val radius=dp(8)+(dp(12)-dp(8))*progress
+            val startX=left+dp(12)
+            val endX=left+trackWidth-dp(16)
+            val cx=startX+(endX-startX)*progress
+            val cy=top+trackHeight/2f
+            fillPaint.color=ColorUtils.blendARGB(muted,onAccent(),progress)
+            canvas.drawCircle(cx,cy,radius,fillPaint)
+            if(progress>.55f){
+                iconPaint.color=accent
+                val a=(progress-.55f)/.45f
+                iconPaint.alpha=(255*a).toInt().coerceIn(0,255)
+                canvas.drawLine(cx-dp(5),cy,cx-dp(1),cy+dp(4),iconPaint)
+                canvas.drawLine(cx-dp(1),cy+dp(4),cx+dp(6),cy-dp(5),iconPaint)
+                iconPaint.alpha=255
+            }
+        }
+    }
+    private fun expressiveToggle(initial:Boolean, enabled:Boolean=true, onChanged:(Boolean)->Unit): FrameLayout = FrameLayout(this).apply {
+        addView(MaterialSwitchView(initial,enabled,onChanged),FrameLayout.LayoutParams(-1,-1,Gravity.CENTER))
+    }
+
+    private inner class PaletteIconView:View(this@MainActivity) {
+        private val palettePaint=Paint(Paint.ANTI_ALIAS_FLAG).apply { color=Color.rgb(142,66,12);style=Paint.Style.FILL }
+        private val cutoutPaint=Paint(Paint.ANTI_ALIAS_FLAG).apply { color=Color.rgb(255,220,196);style=Paint.Style.FILL }
+        override fun onDraw(canvas:Canvas){
+            super.onDraw(canvas)
+            val s=min(width,height).toFloat();val x=(width-s)/2f;val y=(height-s)/2f
+            val p=Path().apply {
+                moveTo(x+s*.82f,y+s*.54f)
+                cubicTo(x+s*.94f,y+s*.40f,x+s*.86f,y+s*.17f,x+s*.67f,y+s*.10f)
+                cubicTo(x+s*.40f,y,x+s*.14f,y+s*.12f,x+s*.08f,y+s*.38f)
+                cubicTo(x+s*.01f,y+s*.67f,x+s*.20f,y+s*.91f,x+s*.49f,y+s*.91f)
+                cubicTo(x+s*.61f,y+s*.91f,x+s*.66f,y+s*.84f,x+s*.64f,y+s*.75f)
+                cubicTo(x+s*.61f,y+s*.64f,x+s*.70f,y+s*.60f,x+s*.82f,y+s*.54f)
+                close()
+            }
+            canvas.drawPath(p,palettePaint)
+            canvas.drawCircle(x+s*.67f,y+s*.34f,s*.095f,cutoutPaint)
+            canvas.drawCircle(x+s*.30f,y+s*.31f,s*.055f,cutoutPaint)
+            canvas.drawCircle(x+s*.45f,y+s*.21f,s*.055f,cutoutPaint)
+            canvas.drawCircle(x+s*.24f,y+s*.49f,s*.055f,cutoutPaint)
+            canvas.drawCircle(x+s*.43f,y+s*.48f,s*.055f,cutoutPaint)
+        }
+    }
+
+    private fun closeButton(action:()->Unit):View = FrameLayout(this).apply {
+        isClickable=true;isFocusable=true
+        background=shape(ColorUtils.blendARGB(surface,accent,.14f),22,1,ColorUtils.blendARGB(outline,accent,.70f))
+        addView(object:View(this@MainActivity){
+            private val p=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=accent;style=Paint.Style.STROKE;strokeCap=Paint.Cap.ROUND;strokeWidth=dp(4).toFloat()}
+            override fun onDraw(c:Canvas){super.onDraw(c);val inset=width*.31f;c.drawLine(inset,inset,width-inset,height-inset,p);c.drawLine(width-inset,inset,inset,height-inset,p)}
+        },FrameLayout.LayoutParams(-1,-1))
+        setOnClickListener { animate().scaleX(.86f).scaleY(.86f).setDuration(80).withEndAction { scaleX=1f;scaleY=1f;action() }.start() }
     }
     private fun animateNumberChoice(view:View, onComplete:()->Unit) {
         view.isEnabled=false
@@ -446,9 +521,12 @@ class MainActivity : ComponentActivity() {
             "gameplay"->Color.rgb(66,196,255)
             else->Color.rgb(255,141,207)
         }
-        val iconRes=when(icon){ "appearance"->R.drawable.ic_appearance_palette; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
         val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,220,196) else iconBackground,24); clipToOutline=true }
-        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=if(icon=="appearance")ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER; if(icon!="appearance")setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(if(icon=="appearance")dp(68) else dp(25),if(icon=="appearance")dp(68) else dp(25),Gravity.CENTER))
+        if(icon=="appearance") iconHolder.addView(PaletteIconView().apply{contentDescription=name},FrameLayout.LayoutParams(dp(31),dp(31),Gravity.CENTER))
+        else {
+            val iconRes=when(icon){ "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
+            iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=ImageView.ScaleType.FIT_CENTER;setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
+        }
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
@@ -906,12 +984,17 @@ If this policy changes, the current text will be provided in the app and on its 
     private fun requestFirstOffer(){
         if(firstOfferShown || prefs.getBoolean("premiumWelcomeSeen",false)) return
         if(premium) { prefs.edit().putBoolean("premiumWelcomeSeen",true).apply(); offerAfterPrivacy=false; return }
-        if(!::billingClient.isInitialized || !billingClient.isReady) { offerAfterPrivacy=true; return }
-        queryOwned(false) { verified -> if(verified) showFirstOffer() }
+        offerAfterPrivacy=true
+        firstOfferFallback?.let { window.decorView.removeCallbacks(it) }
+        firstOfferFallback=Runnable { if(offerAfterPrivacy && !premium) showFirstOffer() }
+        window.decorView.postDelayed(firstOfferFallback!!,1200)
+        if(!::billingClient.isInitialized || !billingClient.isReady) return
+        queryOwned(false) { showFirstOffer() }
     }
     private fun showFirstOffer(){
         if(firstOfferShown || prefs.getBoolean("premiumWelcomeSeen",false) || !offerAfterPrivacy) { offerAfterPrivacy=false; return }
         if(premium) { prefs.edit().putBoolean("premiumWelcomeSeen",true).apply(); offerAfterPrivacy=false; return }
+        firstOfferFallback?.let { window.decorView.removeCallbacks(it) };firstOfferFallback=null
         offerAfterPrivacy=false
         prefs.edit().putBoolean("premiumWelcomeSeen",true).apply()
         firstOfferShown=true
@@ -959,7 +1042,7 @@ If this policy changes, the current text will be provided in the app and on its 
     private fun showPremium(firstLaunch:Boolean=false, planIds:List<String> = listOf("full_app_unlock","premium_annual","premium_levels")){
         if(premium) return
         val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
-        val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(button("×",softAccent,Color.BLACK){dialog.dismiss()}.apply{textSize=26f;minHeight=dp(42);background=shape(softAccent,21)},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END));shell.addView(head,lp(-1,dp(46),0))
+        val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(closeButton{dialog.dismiss()},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END or Gravity.CENTER_VERTICAL));shell.addView(head,lp(-1,dp(46),0))
         shell.addView(label(if(firstLaunch)"Your introductory discounts are ready." else "Get every level and setting.",14,false,muted,Gravity.CENTER).apply{setPadding(0,dp(4),0,dp(12))})
         shell.addView(premiumSupportBanner(),lp(-1,-2,6))
         shell.addView(label("✓ Unlock Hot, Naughty, and custom cards\n✓ Create your own truths and dares\n✓ Enable all gameplay settings",13,true,ink).apply{setLineSpacing(dp(5).toFloat(),1f);setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(ColorUtils.blendARGB(surface,accent,.10f),18,1)},lp(-1,-2,10))

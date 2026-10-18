@@ -134,7 +134,8 @@ class MainActivity : ComponentActivity() {
     // The supplied icon defines the default navy and orange identity. Android's
     // system palette remains available as an explicit Appearance preference.
     private val background get() = dynamicColor(android.R.color.system_neutral1_10, android.R.color.system_neutral1_900, if (isDark()) Color.rgb(32,44,56) else Color.WHITE)
-    private val gradientEnd get() = if(isDark()) Color.rgb(27,22,52) else Color.rgb(238,235,250)
+    private val gradientEnd get() = dynamicColor(android.R.color.system_accent2_100,android.R.color.system_accent2_900,if(isDark())Color.rgb(27,18,58)else Color.rgb(232,225,250))
+    private val gradientStart get() = ColorUtils.blendARGB(background,gradientEnd,if(isDark()).30f else .20f)
     private val surface get() = dynamicColor(android.R.color.system_neutral1_0, android.R.color.system_neutral1_800, if (isDark()) Color.rgb(41,56,70) else Color.rgb(255,248,240))
     private val ink get() = dynamicColor(android.R.color.system_neutral1_900, android.R.color.system_neutral1_10, if (isDark()) Color.rgb(255,248,238) else Color.rgb(23,37,50))
     private val muted get() = dynamicColor(android.R.color.system_neutral2_700, android.R.color.system_neutral2_300, if (isDark()) Color.rgb(195,203,211) else Color.rgb(82,91,100))
@@ -236,16 +237,14 @@ class MainActivity : ComponentActivity() {
     private fun onAccent(): Int = contrastOn(accent)
     private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .36) Color.rgb(23,37,50) else Color.WHITE
     private fun shape(color: Int, radius: Int = 24, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat(); if (stroke > 0) setStroke(dp(stroke), strokeColor) }
-    private fun appBackgroundDrawable() = GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(background,gradientEnd))
+    private fun appBackgroundDrawable() = GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(gradientStart,gradientEnd))
     private fun styleScrollBar(scroll:ScrollView, enabled:Boolean=true) {
         scroll.isVerticalScrollBarEnabled=enabled
         if(!enabled) return
-        scroll.scrollBarStyle=View.SCROLLBARS_INSIDE_INSET
+        scroll.scrollBarStyle=View.SCROLLBARS_INSIDE_OVERLAY
         scroll.verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT
         scroll.setScrollBarSize(dp(4))
-        scroll.clipToPadding=true
-        scroll.setPadding(scroll.paddingLeft,scroll.paddingTop,max(scroll.paddingRight,dp(8)),scroll.paddingBottom)
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q) scroll.verticalScrollbarThumbDrawable=shape(accent,2)
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q) scroll.verticalScrollbarThumbDrawable=android.graphics.drawable.InsetDrawable(shape(accent,2),0,0,dp(1),0)
     }
     private fun groupedShape(color: Int, topRadius: Int, bottomRadius: Int, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply {
         setColor(color)
@@ -388,7 +387,7 @@ class MainActivity : ComponentActivity() {
         if (dock == null) {
             ViewCompat.setOnApplyWindowInsetsListener(sv) { view, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                view.setPadding(bars.left, bars.top + dp(4), bars.right+dp(8), bars.bottom)
+                view.setPadding(bars.left, bars.top + dp(4), bars.right, bars.bottom)
                 insets
             }
             setContentView(sv)
@@ -404,7 +403,7 @@ class MainActivity : ComponentActivity() {
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val keyboard=insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                 val bottom=max(bars.bottom,keyboard)
-                sv.setPadding(bars.left, bars.top + dp(4), bars.right+dp(8), bottom + dockHeight + dp(16))
+                sv.setPadding(bars.left, bars.top + dp(4), bars.right, bottom + dockHeight + dp(16))
                 (dock.layoutParams as FrameLayout.LayoutParams).apply { bottomMargin = (if(dockFollowsIme) bottom else bars.bottom) + dp(8); dock.layoutParams = this }
                 insets
             }
@@ -580,12 +579,17 @@ class MainActivity : ComponentActivity() {
     private fun showLanguage(){
         val root=base();title(root,"Language")
         val selected=prefs.getString("uiLanguage","en") ?: "en"
-        (listOf("system")+supportedLanguages).forEach { code ->
+        val languages=listOf("system")+supportedLanguages
+        val group=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        root.addView(group,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16);topMargin=dp(16)})
+        languages.forEachIndexed { index,code ->
             val active=code==selected
             val row=LinearLayout(this).apply {
                 gravity=Gravity.CENTER_VERTICAL;isClickable=true
                 setPadding(dp(18),0,dp(18),0)
-                background=if(active)accentOutline(18)else shape(surface,18,1)
+                val topRadius=if(index==0)28 else 3
+                val bottomRadius=if(index==languages.lastIndex)28 else 3
+                background=groupedShape(if(active)ColorUtils.blendARGB(surface,accent,if(isDark()).12f else .08f)else surface,topRadius,bottomRadius,1,if(active)accent else outline)
                 setOnClickListener {
                     prefs.edit().putString("uiLanguage",code).apply()
                     loadDecks();configureSpeechVoice();applyLanguageDirection();showLanguage()
@@ -593,7 +597,7 @@ class MainActivity : ComponentActivity() {
             }
             row.addView(label(languageDisplayName(code),14,true,if(active)accent else ink,Gravity.CENTER_VERTICAL),weight(1f))
             if(active)row.addView(label("✓",16,true,accent,Gravity.CENTER),lp(dp(28),dp(44),0))
-            root.addView(row,lp(-1,dp(52),3).apply{leftMargin=dp(16);rightMargin=dp(16)})
+            group.addView(row,lp(-1,dp(52),0).apply{bottomMargin=if(index==languages.lastIndex)0 else dp(3)})
         }
     }
     private fun showAppearance(){
@@ -669,7 +673,7 @@ class MainActivity : ComponentActivity() {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))
         title(root,titleText,true,{goBack()},0)
-        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); clipToOutline=true; setPadding(0,dp(16),dp(8),dp(16)) }
+        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); clipToOutline=true; setPadding(0,dp(16),0,dp(16)) }
         val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=true };styleScrollBar(scroll)
         scroll.addView(label(android.text.SpannableString(body),15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(dp(18),0,dp(18),dp(10)) })
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))

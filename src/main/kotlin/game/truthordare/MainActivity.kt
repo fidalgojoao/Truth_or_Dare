@@ -261,7 +261,13 @@ class MainActivity : ComponentActivity() {
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); editPlayer(players.lastIndex,true) } },lp(dp(120),dp(52),0))
         val root=base(dock=play,dockFollowsIme=false,hideScrollBar=true)
         val brand=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(10),dp(10),dp(10)); background=shape(surface,30,1) }
-        val mark=ImageView(this).apply { setImageResource(resources.getIdentifier("ic_launcher","drawable",packageName)); setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN) }
+        val mark=ImageView(this).apply {
+            setImageResource(R.drawable.ic_brand_mark)
+            scaleType=ImageView.ScaleType.CENTER_CROP
+            contentDescription="Truth or Dare"
+            outlineProvider=object:android.view.ViewOutlineProvider(){override fun getOutline(view:View,outline:android.graphics.Outline){outline.setRoundRect(0,0,view.width,view.height,dp(8).toFloat())}}
+            clipToOutline=true
+        }
         brand.addView(mark,lp(dp(36),dp(36),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER_VERTICAL; setPadding(dp(10),0,0,0) }
         copy.addView(label("Truth or Dare",18,true))

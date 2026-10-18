@@ -78,6 +78,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var billingClient: BillingClient
     private val prices = mutableMapOf<String, String>()
     private val products = mutableMapOf<String, ProductDetails>()
+    private val supportedLanguages=listOf("en","es","fr","de","pt","it","ru","ja","ko","zh-CN","zh-TW","ar","hi","id","tr","vi","th","pl","nl","uk","bn","fa","sv","ro","cs","el","hu","he","da","fi","no","ms","fil","ur","sw","ta","te","mr","gu","kn","ml","pa","sr","hr","sk","bg","lt","sl","et","lv")
+    private val uiTranslations by lazy { runCatching { JSONObject(assets.open("ui_translations.json").bufferedReader().use{it.readText()}) }.getOrDefault(JSONObject()) }
     private val navigationStack = ArrayDeque<String>()
     private var currentScreen = "home"
     private val exportCardsLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let { exportCardsTo(it) } }
@@ -105,6 +107,7 @@ class MainActivity : ComponentActivity() {
             "home" -> showHome()
             "settings" -> showSettings()
             "appearance" -> showAppearance()
+            "language" -> showLanguage()
             "gameplay" -> showGameplay()
             "about" -> showAbout()
             "rules" -> showGameRules()
@@ -165,6 +168,29 @@ class MainActivity : ComponentActivity() {
         "extreme" -> naughtyLevelColor
         else -> accent
     }
+    private fun effectiveLanguage():String {
+        val chosen=prefs.getString("uiLanguage","system") ?: "system"
+        if(chosen!="system" && chosen in supportedLanguages)return chosen
+        val locale=if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.N)resources.configuration.locales[0] else @Suppress("DEPRECATION") resources.configuration.locale
+        val tag=locale.toLanguageTag()
+        return when {
+            locale.language=="zh" && (tag.contains("Hant",true) || locale.country in setOf("TW","HK","MO"))->"zh-TW"
+            locale.language=="zh"->"zh-CN"
+            locale.language in supportedLanguages->locale.language
+            else->"en"
+        }
+    }
+    private fun tr(value:String):String {
+        val language=effectiveLanguage()
+        if(language=="en")return value
+        return uiTranslations.optJSONObject(language)?.optString(value,value)?.takeIf{it.isNotBlank()} ?: value
+    }
+    private fun languageDisplayName(code:String):String {
+        if(code=="system")return tr("System default")
+        val locale=Locale.forLanguageTag(code)
+        return locale.getDisplayName(locale).replaceFirstChar{if(it.isLowerCase())it.titlecase(locale)else it.toString()}
+    }
+    private fun applyLanguageDirection(){window.decorView.layoutDirection=if(effectiveLanguage() in setOf("ar","fa","he","ur"))View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -381,17 +407,13 @@ class MainActivity : ComponentActivity() {
         if(back) top.addView(backButton(backAction),FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(label(value,22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER))
         root.addView(top,lp(-1,dp(46),0).apply { leftMargin=dp(horizontalInset); rightMargin=dp(horizontalInset) })
-    }    private fun label(value: CharSequence, sp: Int = 14, bold: Boolean = false, color: Int = ink, gravity: Int = Gravity.START): TextView = TextView(this).apply { text = value; textSize = sp.toFloat(); setTextColor(color); this.gravity = gravity; typeface = android.graphics.Typeface.create("Google Sans Flex", if(bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL); includeFontPadding=false; if(bold) letterSpacing=.01f }
-    private fun button(value: String, color: Int = accent, fg: Int = Color.WHITE, click: () -> Unit): TextView = TextView(this).apply { val outlined=color==accent;text=value;textSize=15f;typeface=android.graphics.Typeface.create("Google Sans Flex",android.graphics.Typeface.BOLD);setTextColor(if(outlined)accent else fg);gravity=Gravity.CENTER;minHeight=dp(52);background=if(outlined)accentOutline(26) else shape(color,26);setPadding(dp(16),0,dp(16),0);setOnClickListener { click() } }
+    }    private fun label(value: CharSequence, sp: Int = 14, bold: Boolean = false, color: Int = ink, gravity: Int = Gravity.START): TextView = TextView(this).apply { text=if(value is String)tr(value)else value;textSize=sp.toFloat();setTextColor(color);this.gravity=gravity;typeface=android.graphics.Typeface.create("Google Sans Flex",if(bold)android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL);includeFontPadding=false;if(bold)letterSpacing=.01f }
+    private fun button(value: String, color: Int = accent, fg: Int = Color.WHITE, click: () -> Unit): TextView = TextView(this).apply { val outlined=color==accent;text=if(value=="Choose\nagain")tr("Choose again").replaceFirst(" ","\n")else tr(value);textSize=15f;typeface=android.graphics.Typeface.create("Google Sans Flex",android.graphics.Typeface.BOLD);setTextColor(if(outlined)accent else fg);gravity=Gravity.CENTER;minHeight=dp(52);background=if(outlined)accentOutline(26) else shape(color,26);setPadding(dp(16),0,dp(16),0);setOnClickListener { click() } }
     private fun card(root: LinearLayout, margin: Int = 10): LinearLayout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(16),dp(16),dp(16),dp(16)); root.addView(this,lp(-1,-2,margin).apply { leftMargin=dp(16); rightMargin=dp(16) }) }
     private fun divider(root: LinearLayout, n: Int = 14) { root.addView(Space(this), lp(-1, dp(n),0)) }
     private fun mainMargin(view:View) { (view.layoutParams as? LinearLayout.LayoutParams)?.let { it.leftMargin=dp(16); it.rightMargin=dp(16); view.layoutParams=it } }
-    private fun accentedHeader(prefix:String, value:String):CharSequence = android.text.SpannableString("$prefix$value").apply {
-        setSpan(android.text.style.ForegroundColorSpan(accent),prefix.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
-    private fun coloredHeader(prefix:String, value:String, color:Int):CharSequence = android.text.SpannableString("$prefix$value").apply {
-        setSpan(android.text.style.ForegroundColorSpan(color),prefix.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-    }
+    private fun accentedHeader(prefix:String, value:String):CharSequence {val p=tr(prefix);return android.text.SpannableString("$p$value").apply {setSpan(android.text.style.ForegroundColorSpan(accent),p.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)}}
+    private fun coloredHeader(prefix:String, value:String, color:Int):CharSequence {val p=tr(prefix);val v=tr(value.lowercase().replaceFirstChar{it.titlecase()}).uppercase();return android.text.SpannableString("$p$v").apply {setSpan(android.text.style.ForegroundColorSpan(color),p.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)}}
     private fun collapsibleHeader(title:CharSequence, expanded:Boolean, toggle:()->Unit):FrameLayout = FrameLayout(this).apply {
         addView(label(title,13,true,muted,Gravity.CENTER_VERTICAL),FrameLayout.LayoutParams(-1,dp(36),Gravity.CENTER_VERTICAL).apply { rightMargin=dp(36) })
         val arrow=ImageButton(this@MainActivity).apply {
@@ -409,12 +431,12 @@ class MainActivity : ComponentActivity() {
         addView(arrow,FrameLayout.LayoutParams(dp(36),dp(36),Gravity.END or Gravity.CENTER_VERTICAL))
     }
 
-    private fun applyThemeAndHome() { showHome() }
+    private fun applyThemeAndHome() { applyLanguageDirection();showHome() }
     private fun showHome() {
         textToSpeech?.stop()
         activeTimer?.cancel()
-        val play=button("Let's play  →",accent,moveButtonInk,{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,"Choose gender and interaction preferences for every player before playing.",Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f; minHeight=dp(66); background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,130,55),Color.rgb(255,78,132))).apply { cornerRadius=dp(33).toFloat() }; isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
-        val input=EditText(this).apply { hint="Player name"; textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
+        val play=button("Let's play  →",accent,moveButtonInk,{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,tr("Choose gender and interaction preferences for every player before playing."),Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f;setTextColor(moveButtonInk);minHeight=dp(66);background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,130,55),Color.rgb(255,78,132))).apply { cornerRadius=dp(33).toFloat() };isEnabled=players.size>=2;alpha=if(players.size>=2)1f else .5f }
+        val input=EditText(this).apply { hint=tr("Player name"); textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
         val add=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); editPlayer(players.lastIndex,true) } },lp(dp(120),dp(52),0))
         val root=base(dock=play,dockFollowsIme=false,hideScrollBar=true)
@@ -509,6 +531,8 @@ class MainActivity : ComponentActivity() {
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,3,3)
+        val chosenLanguage=prefs.getString("uiLanguage","system") ?: "system"
+        settingsRow(group,"language","Language",languageDisplayName(chosenLanguage),{openScreen("language"){showLanguage()}},3,3,3)
         settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},3,3,3)
         settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},3,28,3)
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
@@ -517,15 +541,18 @@ class MainActivity : ComponentActivity() {
         val iconBackground=when(icon){
             "appearance"->Color.rgb(54,31,99)
             "gameplay"->Color.rgb(20,62,92)
+            "language"->Color.rgb(20,78,70)
             else->Color.rgb(89,18,70)
         }
         val iconForeground=when(icon){
             "appearance"->Color.rgb(190,164,255)
             "gameplay"->Color.rgb(66,196,255)
+            "language"->Color.rgb(52,229,176)
             else->Color.rgb(255,141,207)
         }
         val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,220,196) else iconBackground,24); clipToOutline=true }
         if(icon=="appearance") iconHolder.addView(PaletteIconView().apply{contentDescription=name},FrameLayout.LayoutParams(dp(31),dp(31),Gravity.CENTER))
+        else if(icon=="language") iconHolder.addView(label("文",19,true,iconForeground,Gravity.CENTER).apply{contentDescription=name},FrameLayout.LayoutParams(dp(30),dp(30),Gravity.CENTER))
         else {
             val iconRes=when(icon){ "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
             iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=ImageView.ScaleType.FIT_CENTER;setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
@@ -534,7 +561,28 @@ class MainActivity : ComponentActivity() {
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
         if(showArrow) c.addView(label("›",28,false,muted,Gravity.CENTER),lp(dp(28),dp(48),0))
-    }    private fun showAppearance(){
+    }
+    private fun showLanguage(){
+        val root=base();title(root,"Language")
+        root.addView(label("The interface follows your phone language by default. Game prompts remain in their original prompt-file language.",13,false,muted).apply{setPadding(0,dp(18),0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        val selected=prefs.getString("uiLanguage","system") ?: "system"
+        (listOf("system")+supportedLanguages).forEach { code ->
+            val active=code==selected
+            val row=LinearLayout(this).apply {
+                gravity=Gravity.CENTER_VERTICAL;isClickable=true
+                setPadding(dp(18),0,dp(18),0)
+                background=if(active)accentOutline(18)else shape(surface,18,1)
+                setOnClickListener {
+                    prefs.edit().putString("uiLanguage",code).apply()
+                    applyLanguageDirection();showLanguage()
+                }
+            }
+            row.addView(label(languageDisplayName(code),14,true,if(active)accent else ink,Gravity.CENTER_VERTICAL),weight(1f))
+            if(active)row.addView(label("✓",16,true,accent,Gravity.CENTER),lp(dp(28),dp(44),0))
+            root.addView(row,lp(-1,dp(52),3).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        }
+    }
+    private fun showAppearance(){
         val root=base(); title(root,"Appearance")
         val picker=LinearLayout(this).apply { gravity=Gravity.CENTER; setPadding(dp(5),dp(5),dp(5),dp(5)); background=shape(surface,22,1) }
         fun themeOption(key:String, caption:String, icon:Int) {
@@ -818,7 +866,7 @@ If this policy changes, the current text will be provided in the app and on its 
         picker.addView(truth,LinearLayout.LayoutParams(0,dp(54),1f).apply { rightMargin=dp(5) }); picker.addView(dare,LinearLayout.LayoutParams(0,dp(54),1f).apply { leftMargin=dp(5) })
         options.forEach { view -> val active=view.tag==selected; view.background=if(active)accentOutline(18)else shape(surface,18,1); view.setTextColor(if(active)accent else ink) }
         form.addView(picker)
-        val input=EditText(this).apply { hint="Write a custom card"; setText(old?.text?:""); setTextColor(ink); setHintTextColor(muted); textSize=17f; gravity=Gravity.TOP; minLines=4; background=shape(this@MainActivity.background,18,1); setPadding(dp(14),dp(14),dp(14),dp(14)) }
+        val input=EditText(this).apply { hint=tr("Write a custom card"); setText(old?.text?:""); setTextColor(ink); setHintTextColor(muted); textSize=17f; gravity=Gravity.TOP; minLines=4; background=shape(this@MainActivity.background,18,1); setPadding(dp(14),dp(14),dp(14),dp(14)) }
         form.addView(input,lp(-1,dp(150),4))
         val actions=LinearLayout(this).apply { gravity=Gravity.END or Gravity.CENTER_VERTICAL; setPadding(0,dp(16),0,0) }
         actions.addView(button("Cancel",surface,muted){dialog.dismiss()},lp(dp(122),dp(54),0)); actions.addView(button(if(old==null)"Add" else "Save",accent,onAccent()){ val value=input.text.toString().trim(); if(value.isNotEmpty()){if(old==null)customCards.add(Card(selected,value))else{old.kind=selected;old.text=value};saveState();dialog.dismiss();showCustomCards()} },lp(dp(122),dp(54),8))

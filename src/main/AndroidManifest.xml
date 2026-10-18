@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="remove" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:node="remove" />
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
-    <application android:label="Truth or Dare" android:theme="@style/AppTheme" android:icon="@drawable/ic_brand_mark" android:roundIcon="@drawable/ic_brand_mark" android:allowBackup="false" android:supportsRtl="true">
+    <application android:label="Truth or Dare" android:theme="@style/AppTheme" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true" android:supportsPictureInPicture="true" android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity>

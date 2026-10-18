@@ -158,6 +158,12 @@ class MainActivity : ComponentActivity() {
     private fun onAccent(): Int = if (ColorUtils.calculateLuminance(accent) > .55) Color.rgb(35,27,51) else if (isDark()) Color.rgb(34,28,49) else Color.WHITE
     private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .45) Color.rgb(35,27,51) else Color.WHITE
     private fun shape(color: Int, radius: Int = 24, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat(); if (stroke > 0) setStroke(dp(stroke), strokeColor) }
+    private fun groupedShape(color: Int, topRadius: Int, bottomRadius: Int, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply {
+        setColor(color)
+        val top = dp(topRadius).toFloat(); val bottom = dp(bottomRadius).toFloat()
+        cornerRadii = floatArrayOf(top, top, top, top, bottom, bottom, bottom, bottom)
+        if (stroke > 0) setStroke(dp(stroke), strokeColor)
+    }
     private fun expressiveToggle(initial:Boolean, enabled:Boolean=true, onChanged:(Boolean)->Unit): FrameLayout {
         var checked=initial
         val holder=FrameLayout(this).apply { isClickable=enabled }
@@ -310,7 +316,7 @@ class MainActivity : ComponentActivity() {
         val player=players[index]; val dialog=Dialog(this); var committed=!isNew
         val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(18),dp(16),dp(18));background=shape(this@MainActivity.background,22,1)};dialog.setContentView(form);dialog.setOnDismissListener{if(isNew && !committed && index in players.indices && players[index]===player)players.removeAt(index);showHome()}
         val top=FrameLayout(this);top.addView(backButton{dialog.dismiss()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));top.addView(label("Edit player",18,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));form.addView(top,lp(-1,dp(46),0))
-        form.addView(label("You can change this later, including who they want to interact with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(12))});form.addView(label("Name",12,true));val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)};form.addView(name,lp(-1,dp(50),3))
+        form.addView(label("Name",12,true).apply{setPadding(0,dp(12),0,0)});val name=EditText(this).apply{setText(player.name);setTextColor(ink);setSingleLine(true);textSize=17f;background=shape(this@MainActivity.background,14,1);setPadding(dp(12),0,dp(12),0)};form.addView(name,lp(-1,dp(50),3))
         fun choices(values:List<String>, initial:String, columns:Int=1, change:(String)->Unit={}):Pair<ViewGroup,()->String>{var selected=initial;val host=if(columns==1)LinearLayout(this).apply{gravity=Gravity.CENTER}else GridLayout(this).apply{columnCount=2};val all=mutableListOf<TextView>();values.forEachIndexed{i,v->val b=button(v,if(v==selected)accent else surface,if(v==selected)onAccent()else ink){};b.textSize=13f;b.minHeight=dp(46);b.setOnClickListener{selected=v;all.forEach{x->val on=x.text==v;x.background=shape(if(on)accent else surface,22,1);x.setTextColor(if(on)onAccent()else ink)};change(v)};all.add(b);if(host is LinearLayout)host.addView(b,LinearLayout.LayoutParams(0,dp(46),1f).apply{if(i<values.lastIndex)rightMargin=dp(7)})else host.addView(b,GridLayout.LayoutParams().apply{width=0;height=dp(46);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);setMargins(if(i%2==0)0 else dp(4),dp(2),if(i%2==0)dp(4)else 0,dp(2))})};return host to {selected}}
         form.addView(label("Gender",12,true).apply{setPadding(0,dp(8),0,dp(4))});val(gender,getGender)=choices(listOf("Man","Woman"),player.gender);form.addView(gender)
         val calibration=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(if(premium)surface else ColorUtils.blendARGB(surface,outline,.42f),16,1);setPadding(dp(16),dp(8),dp(16),dp(8));isClickable=!premium;setOnClickListener{if(!premium)showPremium()}};val calibrationHead=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val comfortTitle=label("Comfort-zone calibration · ${player.comfort}/10"+if(!premium)"  🔒" else "",12,true,if(premium)ink else muted);calibrationHead.addView(comfortTitle,weight(1f));var comfortEnabled=player.comfortEnabled;calibrationHead.addView(expressiveToggle(comfortEnabled&&premium,true){on->if(premium)comfortEnabled=on else showPremium()},lp(dp(58),dp(36),0));calibration.addView(calibrationHead);calibration.addView(label(if(premium)"Adjust easier prompts for this player." else "Tap to view Premium plans and unlock per-player prompt adjustment.",10,false,muted));val comfort=SeekBar(this).apply{max=9;progress=player.comfort-1;progressTintList=android.content.res.ColorStateList.valueOf(accent);thumbTintList=android.content.res.ColorStateList.valueOf(accent);backgroundTintList=android.content.res.ColorStateList.valueOf(outline);minimumHeight=dp(34);isEnabled=premium};comfort.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(s:SeekBar?,v:Int,u:Boolean){comfortTitle.text="Comfort-zone calibration · ${v+1}/10"+if(!premium)"  🔒" else ""};override fun onStartTrackingTouch(s:SeekBar?){};override fun onStopTrackingTouch(s:SeekBar?){}});calibration.addView(comfort,lp(-1,dp(26),0));calibration.addView(label("1 · Wholesome & soft                              10 · Chaos & spicy",10,false,muted,Gravity.CENTER));form.addView(calibration,lp(-1,-2,6))
@@ -327,11 +333,11 @@ class MainActivity : ComponentActivity() {
         divider(root,7)
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
-        settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,2)
-        settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},8,2)
-        settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},28,0)
-    }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,radius:Int=24,verticalMargin:Int=8,showArrow:Boolean=true){
-        val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=shape(surface,radius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
+        settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,8)
+        settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},8,8)
+        settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},8,28)
+    }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
+        val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
         root.addView(c,LinearLayout.LayoutParams(-1,dp(68)).apply { topMargin=dp(verticalMargin); bottomMargin=dp(verticalMargin) })
         val iconBackground=when(icon){ "appearance"->Color.rgb(54,31,99); "gameplay"->Color.rgb(20,62,92); "about"->Color.rgb(89,18,70); else->accent }
         val iconForeground=when(icon){ "appearance"->Color.rgb(190,164,255); "gameplay"->Color.rgb(66,196,255); "about"->Color.rgb(255,141,207); else->onAccent() }
@@ -374,7 +380,10 @@ class MainActivity : ComponentActivity() {
         c.addView(expressiveToggle(useSystemColors){ on->useSystemColors=on;saveState();showAppearance() },lp(dp(64),dp(40),0))
     }    private fun showGameplay(){
         val root=base(); title(root,"Gameplay"); val locked=!premium
-        val c=card(root,16); mainMargin(c)
+        val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+        root.addView(group,lp(-1,-2,16).apply { leftMargin=dp(16); rightMargin=dp(16) })
+        fun groupCard(topRadius:Int,bottomRadius:Int)=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(16),dp(16),dp(16),dp(16)) }
+        val c=groupCard(28,8); group.addView(c,lp(-1,-2,0))
         val heading=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         copy.addView(label("Limit consecutive truths"+if(locked)"  🔒" else "",16,true,if(locked)muted else ink))
@@ -391,18 +400,20 @@ class MainActivity : ComponentActivity() {
         }
         c.addView(values)
         c.addView(label(if(locked)"Unlock Premium Levels to choose a custom truth limit." else "Each player can choose up to $truthLimit truth${if(truthLimit==1)"" else "s"} before Dare is required.",12,false,muted).apply { setPadding(0,dp(10),0,dp(2)) })
-        val reverse=card(root,10); mainMargin(reverse)
+        val reverse=groupCard(8,28); group.addView(reverse,lp(-1,-2,0))
         val head=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val reverseCopy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};reverseCopy.addView(label("Reverse Dare"+if(locked)"  🔒" else "",16,true,if(locked)muted else ink));reverseCopy.addView(label(if(locked)"Premium feature · requires Premium Levels." else "After consecutive dares, allow the player to assign a dare to another random player.",12,false,muted));head.addView(reverseCopy,weight(1f));head.addView(expressiveToggle(!locked&&reverseDares,!locked){on->reverseDares=on;saveState();showGameplay()},lp(dp(64),dp(40),0));reverse.addView(head)
         reverse.addView(label("Dares before Reverse Dare",13,true,if(locked)muted else ink).apply{setPadding(0,dp(14),0,dp(7))});val counts=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;alpha=if(locked).48f else 1f};(1..5).forEach{value->val active=value==reverseDareLimit;val choice=button(value.toString(),if(active&&!locked)accent else surface,if(active&&!locked)onAccent()else muted){if(!locked){reverseDareLimit=value;saveState();showGameplay()}}.apply{minHeight=dp(44);textSize=15f;isEnabled=!locked;background=shape(if(active&&!locked)accent else surface,18,1)};counts.addView(choice,LinearLayout.LayoutParams(0,dp(44),1f).apply{if(value>1)leftMargin=dp(5)})};reverse.addView(counts)
     }
     private fun showAbout(){
-        val root=base(); title(root,"About app")
+        val root=base(); title(root,"General Information")
         divider(root,7)
-        settingsRow(root,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},showArrow=false)
-        settingsRow(root,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},showArrow=false)
-        settingsRow(root,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},showArrow=false)
-        settingsRow(root,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},showArrow=false)
-        settingsRow(root,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},showArrow=false)
+        val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+        root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
+        settingsRow(group,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},28,8,showArrow=false)
+        settingsRow(group,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},8,8,showArrow=false)
+        settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},8,8,showArrow=false)
+        settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},8,8,showArrow=false)
+        settingsRow(group,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},8,28,showArrow=false)
     }    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))

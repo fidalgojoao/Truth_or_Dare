@@ -676,13 +676,30 @@ class MainActivity : ComponentActivity() {
         if(!premium) {
             settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},3,28,3,showArrow=false)
         }
-    }    private fun informationPage(titleText:String, body:String) {
+    }    private val privacyPolicyDisplayUrl="github.com/joaofidalgo1998/joaofidalgo1998/blob/main/truth-or-dare-privacy-policy.md"
+    private val privacyPolicyUrl="https://$privacyPolicyDisplayUrl"
+    private fun linkedInformationText(body:String):android.text.SpannableString {
+        val linked=android.text.SpannableString(body)
+        var start=body.indexOf(privacyPolicyDisplayUrl)
+        while(start>=0){
+            linked.setSpan(object:android.text.style.ClickableSpan(){
+                override fun onClick(widget:View){
+                    val browserIntent=Intent(Intent.ACTION_VIEW,Uri.parse(privacyPolicyUrl)).apply { addCategory(Intent.CATEGORY_BROWSABLE) }
+                    runCatching { startActivity(browserIntent) }
+                }
+                override fun updateDrawState(ds:android.text.TextPaint){ ds.color=accent;ds.isUnderlineText=true }
+            },start,start+privacyPolicyDisplayUrl.length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            start=body.indexOf(privacyPolicyDisplayUrl,start+privacyPolicyDisplayUrl.length)
+        }
+        return linked
+    }
+    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))
         title(root,titleText,true,{goBack()},0)
         val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); clipToOutline=true; setPadding(0,dp(16),0,dp(16)) }
         val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=true };styleScrollBar(scroll)
-        scroll.addView(label(android.text.SpannableString(body),15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(dp(18),0,dp(18),dp(10)) })
+        scroll.addView(label(linkedInformationText(body),15,false,ink).apply { movementMethod=android.text.method.LinkMovementMethod.getInstance();highlightColor=Color.TRANSPARENT;setLineSpacing(dp(7).toFloat(),1.0f);setPadding(dp(18),0,dp(18),dp(10)) })
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
@@ -744,7 +761,7 @@ If this policy changes, the current text will be provided in the app and on its 
         shell.addView(label("Privacy policy",22,true))
         shell.addView(label("Before you start, please read how Truth or Dare handles your data.",13,false,muted).apply { setPadding(0,dp(6),0,dp(8)) })
         val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll)
-        scroll.addView(label(android.text.SpannableString(trKey("__privacy_policy_body",privacyText())),13,false,ink).apply { setLineSpacing(dp(5).toFloat(),1f); setPadding(0,0,dp(18),dp(8)) })
+        scroll.addView(label(linkedInformationText(trKey("__privacy_policy_body",privacyText())),13,false,ink).apply { movementMethod=android.text.method.LinkMovementMethod.getInstance();highlightColor=Color.TRANSPARENT;setLineSpacing(dp(5).toFloat(),1f);setPadding(0,0,dp(18),dp(8)) })
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply { rightMargin=dp(-16) })
         shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); if(!prefs.getBoolean("premiumWelcomeSeen",false)){ offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } } },lp(-1,dp(54),0))
         dialog.setContentView(shell); dialog.setCancelable(false); dialog.show()

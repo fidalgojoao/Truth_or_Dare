@@ -351,8 +351,16 @@ class MainActivity : ComponentActivity() {
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
         val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
         root.addView(c,LinearLayout.LayoutParams(-1,dp(68)).apply { bottomMargin=dp(verticalMargin) })
-        val iconBackground=softAccent
-        val iconForeground=accent
+        val iconBackground=when(icon){
+            "appearance"->Color.rgb(54,31,99)
+            "gameplay"->Color.rgb(20,62,92)
+            else->Color.rgb(89,18,70)
+        }
+        val iconForeground=when(icon){
+            "appearance"->Color.rgb(190,164,255)
+            "gameplay"->Color.rgb(66,196,255)
+            else->Color.rgb(255,141,207)
+        }
         val iconRes=when(icon){ "appearance"->R.drawable.ic_wallpaper; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
         val iconHolder=FrameLayout(this).apply { background=shape(iconBackground,24) }
         iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))

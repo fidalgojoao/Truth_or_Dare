@@ -447,8 +447,8 @@ class MainActivity : ComponentActivity() {
             else->Color.rgb(255,141,207)
         }
         val iconRes=when(icon){ "appearance"->R.drawable.ic_appearance_palette; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
-        val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,217,190) else iconBackground,24); clipToOutline=true }
-        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=if(icon=="appearance")ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER; if(icon!="appearance")setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(if(icon=="appearance")dp(60) else dp(25),if(icon=="appearance")dp(60) else dp(25),Gravity.CENTER))
+        val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,220,196) else iconBackground,24); clipToOutline=true }
+        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=if(icon=="appearance")ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER; if(icon!="appearance")setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(if(icon=="appearance")dp(68) else dp(25),if(icon=="appearance")dp(68) else dp(25),Gravity.CENTER))
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
@@ -824,7 +824,7 @@ If this policy changes, the current text will be provided in the app and on its 
                     queryProducts()
                     val announceRestore=restorePendingAfterConnection
                     restorePendingAfterConnection=false
-                    queryOwned(announceRestore) { if(offerAfterPrivacy) showFirstOffer() }
+                    queryOwned(announceRestore) { verified -> if(offerAfterPrivacy && verified) showFirstOffer() }
                 }
             }
             override fun onBillingServiceDisconnected() {}
@@ -845,7 +845,7 @@ If this policy changes, the current text will be provided in the app and on its 
         query(listOf("full_app_unlock","premium_annual"),BillingClient.ProductType.SUBS)
         query(listOf("premium_levels"),BillingClient.ProductType.INAPP)
     }
-    private fun queryOwned(announce:Boolean=false, onComplete:()->Unit={}){
+    private fun queryOwned(announce:Boolean=false, onComplete:(Boolean)->Unit={ _ -> }){
         if(announce) Toast.makeText(this,"Checking Google Play purchases…",Toast.LENGTH_SHORT).show()
         if(!::billingClient.isInitialized || !billingClient.isReady){
             if(announce) {
@@ -868,7 +868,7 @@ If this policy changes, the current text will be provided in the app and on its 
                         val found=restored.any { purchase -> purchase.purchaseState==Purchase.PurchaseState.PURCHASED && purchase.products.any { it=="premium_levels" || it=="full_app_unlock" || it=="premium_annual" } }
                         Toast.makeText(this,if(!allSuccessful) "Google Play could not be reached. Your valid offline Premium access is unchanged." else if(found) "Purchases restored. Premium Levels unlocked." else "No eligible purchases were found for this Google Play account.",Toast.LENGTH_LONG).show()
                     }
-                    onComplete()
+                    onComplete(allSuccessful)
                 }
             }
         }
@@ -907,7 +907,7 @@ If this policy changes, the current text will be provided in the app and on its 
         if(firstOfferShown || prefs.getBoolean("premiumWelcomeSeen",false)) return
         if(premium) { prefs.edit().putBoolean("premiumWelcomeSeen",true).apply(); offerAfterPrivacy=false; return }
         if(!::billingClient.isInitialized || !billingClient.isReady) { offerAfterPrivacy=true; return }
-        queryOwned(false) { showFirstOffer() }
+        queryOwned(false) { verified -> if(verified) showFirstOffer() }
     }
     private fun showFirstOffer(){
         if(firstOfferShown || prefs.getBoolean("premiumWelcomeSeen",false) || !offerAfterPrivacy) { offerAfterPrivacy=false; return }
@@ -981,8 +981,8 @@ If this policy changes, the current text will be provided in the app and on its 
         try{
             val obj=JSONObject(assets.open("truth_or_dare_prompts.json").bufferedReader().use{it.readText()})
             val plans=obj.optJSONObject("plans") ?: obj
-            listOf("soft","hot","hard","extreme").forEach { level ->
-                val list=mutableListOf<Card>(); val plan=plans.optJSONObject(level)
+            mapOf("soft" to "casual","hot" to "flirty","hard" to "hot","extreme" to "naughty").forEach { (level,sourceLevel) ->
+                val list=mutableListOf<Card>(); val plan=plans.optJSONObject(sourceLevel) ?: plans.optJSONObject(level)
                 listOf("truths" to "truth","dares" to "dare").forEach { (key,kind) ->
                     val prompts=plan?.optJSONArray(key)
                     if(prompts!=null) for(i in 0 until prompts.length()){

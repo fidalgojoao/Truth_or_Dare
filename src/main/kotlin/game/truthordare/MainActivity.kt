@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private var reverseDareTarget: Player? = null
     private var reverseDarePending = false
     private var premium = false
+    private var premiumDialog: Dialog? = null
     private val offlinePremiumWindowMs = 30L * 24L * 60L * 60L * 1000L
     private val premiumCacheKeyAlias = "truth_or_dare_premium_entitlement_v1"
     private val ownedProductIds = mutableSetOf<String>()
@@ -324,21 +325,21 @@ class MainActivity : ComponentActivity() {
         val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0)}
         players.filterIndexed{i,_->i!=index}.forEach{p->val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(this@MainActivity.background,14,1);setPadding(dp(10),0,dp(10),0)};val check=CheckBox(this).apply{buttonTintList=android.content.res.ColorStateList.valueOf(accent);isClickable=false};val copy=label("${p.name}  ·  ${p.gender}",13,true);row.addView(check,lp(dp(40),dp(40),0));row.addView(copy,weight(1f));fun render(){val yes=getPref()=="Specific players";check.isChecked=p.name in selected;row.alpha=if(yes)1f else .38f;copy.setTextColor(if(yes)ink else muted)};row.setOnClickListener{if(getPref()=="Specific players"){if(p.name in selected)selected.remove(p.name)else selected.add(p.name);render()}};refreshers.add(::render);render();list.addView(row,lp(-1,dp(46),2))};val otherPlayers=players.size-1;if(otherPlayers>0){ form.addView(box,LinearLayout.LayoutParams(-1,dp(if(otherPlayers>=3)154 else otherPlayers*48+12)).apply{topMargin=dp(4);bottomMargin=dp(6)}) }
         val validation=label("",11,true,Color.rgb(186,26,26)).apply{visibility=View.GONE};form.addView(validation,lp(-1,-2,8))
-        val actions=LinearLayout(this);actions.addView(button("Remove player",Color.rgb(186,26,26),Color.WHITE){players.removeAt(index);saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{rightMargin=dp(6)});actions.addView(button("Save player",accent,onAccent()){if(getGender().isBlank() || getPref().isBlank()){validation.text="Choose both gender and interaction preferences to save this player.";validation.visibility=View.VISIBLE;return@button};player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.comfort=comfort.progress+1;player.comfortEnabled=comfortEnabled&&premium;player.specificPlayers.clear();player.specificPlayers.addAll(selected);committed=true;saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{leftMargin=dp(6)});form.addView(actions,lp(-1,dp(52),6));dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(players.size<=3)WindowManager.LayoutParams.WRAP_CONTENT else (resources.displayMetrics.heightPixels*.88f).toInt());setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.4f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
+        val actions=LinearLayout(this);actions.addView(button("Remove player",Color.rgb(186,26,26),Color.WHITE){players.removeAt(index);saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{rightMargin=dp(6)});actions.addView(button("Save player",accent,onAccent()){if(getGender().isBlank() || getPref().isBlank()){validation.text="Choose both gender and interaction preferences to save this player.";validation.visibility=View.VISIBLE;return@button};player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.comfort=comfort.progress+1;player.comfortEnabled=comfortEnabled&&premium;player.specificPlayers.clear();player.specificPlayers.addAll(selected);committed=true;saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{leftMargin=dp(6)});form.addView(actions,lp(-1,dp(52),6));dialog.show();dialog.window?.apply{decorView.setPadding(0,0,0,0);setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(players.size<=3)WindowManager.LayoutParams.WRAP_CONTENT else (resources.displayMetrics.heightPixels*.88f).toInt());setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.4f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
     }
     private fun findRadio(group:RadioGroup):String { val id=group.checkedRadioButtonId; return group.findViewById<RadioButton>(id)?.text?.toString() ?: "" }
 
     private fun showSettings() {
         val root=base(); title(root,"Settings")
-        divider(root,7)
+        divider(root,16)
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
-        settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,8)
-        settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},8,8)
-        settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},8,28)
+        settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,8,3)
+        settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},8,8,3)
+        settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},8,28,3)
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
         val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
-        root.addView(c,LinearLayout.LayoutParams(-1,dp(68)).apply { topMargin=dp(verticalMargin); bottomMargin=dp(verticalMargin) })
+        root.addView(c,LinearLayout.LayoutParams(-1,dp(68)).apply { bottomMargin=dp(verticalMargin) })
         val iconBackground=when(icon){ "appearance"->Color.rgb(54,31,99); "gameplay"->Color.rgb(20,62,92); "about"->Color.rgb(89,18,70); else->accent }
         val iconForeground=when(icon){ "appearance"->Color.rgb(190,164,255); "gameplay"->Color.rgb(66,196,255); "about"->Color.rgb(255,141,207); else->onAccent() }
         val iconRes=when(icon){ "appearance"->R.drawable.ic_wallpaper; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
@@ -406,14 +407,14 @@ class MainActivity : ComponentActivity() {
     }
     private fun showAbout(){
         val root=base(); title(root,"General Information")
-        divider(root,7)
+        divider(root,16)
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
-        settingsRow(group,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},28,8,showArrow=false)
-        settingsRow(group,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},8,8,showArrow=false)
-        settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},8,8,showArrow=false)
-        settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},8,8,showArrow=false)
-        settingsRow(group,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},8,28,showArrow=false)
+        settingsRow(group,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},28,8,3,showArrow=false)
+        settingsRow(group,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},8,8,3,showArrow=false)
+        settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},8,8,3,showArrow=false)
+        settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},8,8,3,showArrow=false)
+        settingsRow(group,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},8,28,3,showArrow=false)
     }    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))
@@ -716,7 +717,10 @@ class MainActivity : ComponentActivity() {
             else -> premium || hasValidCachedPremiumEntitlement()
         }
         saveState()
-        if(wasPremium!=premium && currentScreen=="home") runOnUiThread { showHome() }
+        if(wasPremium!=premium) runOnUiThread {
+            premiumDialog?.dismiss()
+            if(currentScreen=="home") showHome()
+        }
         purchases.filter { it.purchaseState==Purchase.PurchaseState.PURCHASED && !it.isAcknowledged }.forEach { purchase -> billingClient.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()){} }
     }
     private fun requestFirstOffer(){
@@ -758,7 +762,7 @@ class MainActivity : ComponentActivity() {
         root.addView(button("Restore purchases",surface,ink){queryOwned(true)},lp(-1,dp(54),4).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
     private fun showPremium(firstLaunch:Boolean=false, planIds:List<String> = listOf("full_app_unlock","premium_annual","premium_levels")){
-        val dialog=Dialog(this); val scroll=ScrollView(this); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
+        val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
         val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(button("×",softAccent,Color.BLACK){dialog.dismiss()}.apply{textSize=26f;minHeight=dp(42);background=shape(softAccent,21)},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END));shell.addView(head,lp(-1,dp(46),0))
         shell.addView(label(if(firstLaunch)"Your introductory discounts are ready." else "Get every level and setting.",14,false,muted,Gravity.CENTER).apply{setPadding(0,dp(4),0,dp(12))})
         shell.addView(label("✓ Unlock Hard, Extreme, and custom cards\n✓ Create your own truths and dares\n✓ Enable all gameplay settings",13,true,ink).apply{setLineSpacing(dp(5).toFloat(),1f);setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(ColorUtils.blendARGB(surface,accent,.10f),18,1)},lp(-1,-2,10))
@@ -774,7 +778,7 @@ class MainActivity : ComponentActivity() {
             billingClient.launchBillingFlow(this,BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(item)).build())
         },lp(-1,dp(54),4))
         shell.addView(button("Restore purchases",surface,ink){queryOwned(true)},lp(-1,dp(48),8))
-        dialog.setContentView(scroll);dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(firstLaunch)dp(if(planIds.size==3)806 else if(planIds.size==2)702 else 592) else -2);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.45f;if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)blurBehindRadius=dp(20)};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)}
+        dialog.setContentView(scroll);dialog.show();dialog.window?.apply{decorView.setPadding(0,0,0,0);setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(firstLaunch)dp(if(planIds.size==3)806 else if(planIds.size==2)702 else 592) else -2);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.45f;if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)blurBehindRadius=dp(20)};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)}
     }
     private fun loadDecks(){
         try{

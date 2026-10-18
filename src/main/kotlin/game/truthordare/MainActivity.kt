@@ -134,6 +134,7 @@ class MainActivity : ComponentActivity() {
     // The supplied icon defines the default navy and orange identity. Android's
     // system palette remains available as an explicit Appearance preference.
     private val background get() = dynamicColor(android.R.color.system_neutral1_10, android.R.color.system_neutral1_900, if (isDark()) Color.rgb(32,44,56) else Color.WHITE)
+    private val gradientEnd get() = if(isDark()) Color.rgb(27,22,52) else Color.rgb(238,235,250)
     private val surface get() = dynamicColor(android.R.color.system_neutral1_0, android.R.color.system_neutral1_800, if (isDark()) Color.rgb(41,56,70) else Color.rgb(255,248,240))
     private val ink get() = dynamicColor(android.R.color.system_neutral1_900, android.R.color.system_neutral1_10, if (isDark()) Color.rgb(255,248,238) else Color.rgb(23,37,50))
     private val muted get() = dynamicColor(android.R.color.system_neutral2_700, android.R.color.system_neutral2_300, if (isDark()) Color.rgb(195,203,211) else Color.rgb(82,91,100))
@@ -171,7 +172,7 @@ class MainActivity : ComponentActivity() {
         else -> accent
     }
     private fun effectiveLanguage():String {
-        val chosen=prefs.getString("uiLanguage","system") ?: "system"
+        val chosen=prefs.getString("uiLanguage","en") ?: "en"
         if(chosen!="system" && chosen in supportedLanguages)return chosen
         val locale=if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.N)resources.configuration.locales[0] else @Suppress("DEPRECATION") resources.configuration.locale
         val tag=locale.toLanguageTag()
@@ -187,6 +188,7 @@ class MainActivity : ComponentActivity() {
         if(language=="en")return value
         return uiTranslations.optJSONObject(language)?.optString(value,value)?.takeIf{it.isNotBlank()} ?: value
     }
+    private fun trKey(key:String,fallback:String):String = uiTranslations.optJSONObject(effectiveLanguage())?.optString(key,fallback)?.takeIf{it.isNotBlank()} ?: fallback
     private fun trf(value:String,vararg replacements:Pair<String,Any>):String = replacements.fold(tr(value)){text,(key,replacement)->text.replace("{$key}",replacement.toString())}
     private fun fitSingleLine(view:TextView,minSp:Int=10,maxSp:Int=15){view.isSingleLine=true;TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(view,minSp,maxSp,1,TypedValue.COMPLEX_UNIT_SP)}
     private fun languageDisplayName(code:String):String {
@@ -219,8 +221,9 @@ class MainActivity : ComponentActivity() {
 
     private fun configureSpeechVoice() {
         val engine=textToSpeech ?: return
-        engine.language=Locale.getDefault()
-        val femaleVoice=engine.voices?.filter { it.locale.language==Locale.getDefault().language && it.name.contains("female",true) && it.quality>=android.speech.tts.Voice.QUALITY_HIGH }?.maxByOrNull { it.quality }
+        val languageLocale=Locale.forLanguageTag(effectiveLanguage())
+        engine.language=languageLocale
+        val femaleVoice=engine.voices?.filter { it.locale.language==languageLocale.language && it.name.contains("female",true) && it.quality>=android.speech.tts.Voice.QUALITY_HIGH }?.maxByOrNull { it.quality }
         femaleVoice?.let { engine.voice=it }
         engine.setSpeechRate(.90f)
         engine.setPitch(1.02f)
@@ -233,12 +236,15 @@ class MainActivity : ComponentActivity() {
     private fun onAccent(): Int = contrastOn(accent)
     private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .36) Color.rgb(23,37,50) else Color.WHITE
     private fun shape(color: Int, radius: Int = 24, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat(); if (stroke > 0) setStroke(dp(stroke), strokeColor) }
+    private fun appBackgroundDrawable() = GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(background,gradientEnd))
     private fun styleScrollBar(scroll:ScrollView, enabled:Boolean=true) {
         scroll.isVerticalScrollBarEnabled=enabled
         if(!enabled) return
-        scroll.scrollBarStyle=View.SCROLLBARS_INSIDE_OVERLAY
+        scroll.scrollBarStyle=View.SCROLLBARS_INSIDE_INSET
         scroll.verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT
         scroll.setScrollBarSize(dp(4))
+        scroll.clipToPadding=true
+        scroll.setPadding(scroll.paddingLeft,scroll.paddingTop,max(scroll.paddingRight,dp(8)),scroll.paddingBottom)
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q) scroll.verticalScrollbarThumbDrawable=shape(accent,2)
     }
     private fun groupedShape(color: Int, topRadius: Int, bottomRadius: Int, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply {
@@ -292,8 +298,10 @@ class MainActivity : ComponentActivity() {
                 iconPaint.color=accent
                 val a=(progress-.55f)/.45f
                 iconPaint.alpha=(255*a).toInt().coerceIn(0,255)
-                canvas.drawLine(cx-dp(5),cy,cx-dp(1),cy+dp(4),iconPaint)
-                canvas.drawLine(cx-dp(1),cy+dp(4),cx+dp(6),cy-dp(5),iconPaint)
+                val checkX=cx-resources.displayMetrics.density*.5f
+                val checkY=cy+resources.displayMetrics.density*.5f
+                canvas.drawLine(checkX-dp(5),checkY,checkX-dp(1),checkY+dp(4),iconPaint)
+                canvas.drawLine(checkX-dp(1),checkY+dp(4),checkX+dp(6),checkY-dp(5),iconPaint)
                 iconPaint.alpha=255
             }
         }
@@ -354,7 +362,7 @@ class MainActivity : ComponentActivity() {
 
     private fun prepareWindow() {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-        window.decorView.setBackgroundColor(background)
+        window.decorView.background=appBackgroundDrawable()
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = !isDark()
             isAppearanceLightNavigationBars = !isDark()
@@ -365,7 +373,7 @@ class MainActivity : ComponentActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setBackgroundColor(this@MainActivity.background)
+            if(scroll)setBackgroundColor(Color.TRANSPARENT)else background=appBackgroundDrawable()
             setPadding(if(scroll) 0 else dp(16), 0, if(scroll) 0 else dp(16), dp(16))
         }
         if (!scroll) {
@@ -376,18 +384,19 @@ class MainActivity : ComponentActivity() {
             }
             setContentView(root); return root
         }
-        val sv = ScrollView(this).apply { isFillViewport = true; clipToPadding = false; setBackgroundColor(this@MainActivity.background); addView(root) }; styleScrollBar(sv,!hideScrollBar)
+        val sv = ScrollView(this).apply { isFillViewport = true; clipToPadding = true; background=appBackgroundDrawable(); addView(root) }; styleScrollBar(sv,!hideScrollBar)
         if (dock == null) {
             ViewCompat.setOnApplyWindowInsetsListener(sv) { view, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                view.setPadding(bars.left, bars.top + dp(4), bars.right, bars.bottom)
+                view.setPadding(bars.left, bars.top + dp(4), bars.right+dp(8), bars.bottom)
                 insets
             }
             setContentView(sv)
         } else {
             val dockHeight=max(dp(66),dock.minimumHeight)
             val frame = FrameLayout(this).apply {
-                setBackgroundColor(this@MainActivity.background)
+                background=appBackgroundDrawable()
+                sv.setBackgroundColor(Color.TRANSPARENT)
                 addView(sv, FrameLayout.LayoutParams(-1, -1))
                 addView(dock, FrameLayout.LayoutParams(-1, dockHeight, Gravity.BOTTOM).apply { setMargins(dp(dockMargin), 0, dp(dockMargin), 0) })
             }
@@ -395,7 +404,7 @@ class MainActivity : ComponentActivity() {
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val keyboard=insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                 val bottom=max(bars.bottom,keyboard)
-                sv.setPadding(bars.left, bars.top + dp(4), bars.right, bottom + dockHeight + dp(16))
+                sv.setPadding(bars.left, bars.top + dp(4), bars.right+dp(8), bottom + dockHeight + dp(16))
                 (dock.layoutParams as FrameLayout.LayoutParams).apply { bottomMargin = (if(dockFollowsIme) bottom else bars.bottom) + dp(8); dock.layoutParams = this }
                 insets
             }
@@ -524,7 +533,7 @@ class MainActivity : ComponentActivity() {
         fun comfortLabel(value:Int)=trf("Comfort-zone calibration · {value}/10","value" to value)+if(!premium)"  🔒" else ""
         val calibration=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(if(premium)surface else ColorUtils.blendARGB(surface,outline,.42f),16,1);setPadding(dp(16),dp(8),dp(16),dp(8));isClickable=!premium;setOnClickListener{if(!premium)showPremium()}};val calibrationHead=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val comfortTitle=label(comfortLabel(player.comfort),12,true,if(premium)ink else muted);calibrationHead.addView(comfortTitle,weight(1f));var comfortEnabled=player.comfortEnabled&&premium;calibrationHead.addView(expressiveToggle(comfortEnabled,premium){on->comfortEnabled=on},lp(dp(58),dp(36),0));calibration.addView(calibrationHead);calibration.addView(label(if(premium)"Adjust easier prompts for this player." else "Tap to view Premium plans and unlock per-player prompt adjustment.",10,false,muted));val comfort=SeekBar(this).apply{max=9;progress=player.comfort-1;progressTintList=android.content.res.ColorStateList.valueOf(accent);thumbTintList=android.content.res.ColorStateList.valueOf(accent);backgroundTintList=android.content.res.ColorStateList.valueOf(outline);minimumHeight=dp(34);isEnabled=premium};comfort.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(s:SeekBar?,v:Int,u:Boolean){comfortTitle.text=comfortLabel(v+1)};override fun onStartTrackingTouch(s:SeekBar?){};override fun onStopTrackingTouch(s:SeekBar?){}});calibration.addView(comfort,lp(-1,dp(26),0));val scale=LinearLayout(this);scale.addView(label("1 · Wholesome & soft",10,false,muted),weight(1f));scale.addView(label("10 · Chaos & spicy",10,false,muted,Gravity.END),weight(1f));calibration.addView(scale);form.addView(calibration,lp(-1,-2,6))
         form.addView(label("Wants to interact with",12,true).apply{setPadding(0,dp(8),0,dp(4))});val refreshers=mutableListOf<()->Unit>();val(pref,getPref)=choices(listOf("Men","Women","Men & women","Specific players"),player.preference,2){refreshers.forEach{it()}};form.addView(pref);form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(6))})
-        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0);styleScrollBar(this)}
+        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);clipToOutline=true;isFillViewport=true;styleScrollBar(this)}
         players.filterIndexed{i,_->i!=index}.forEach{p->val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(this@MainActivity.background,14,1);setPadding(dp(10),0,dp(10),0)};val check=CheckBox(this).apply{buttonTintList=android.content.res.ColorStateList.valueOf(accent);isClickable=false};val copy=label("${p.name}  ·  ${tr(p.gender)}",13,true);row.addView(check,lp(dp(40),dp(40),0));row.addView(copy,weight(1f));fun render(){val yes=getPref()=="Specific players";check.isChecked=p.name in selected;row.alpha=if(yes)1f else .38f;copy.setTextColor(if(yes)ink else muted)};row.setOnClickListener{if(getPref()=="Specific players"){if(p.name in selected)selected.remove(p.name)else selected.add(p.name);render()}};refreshers.add(::render);render();list.addView(row,lp(-1,dp(46),2))};val otherPlayers=players.size-1;if(otherPlayers>0){ form.addView(box,LinearLayout.LayoutParams(-1,dp(if(otherPlayers>=3)154 else otherPlayers*48+12)).apply{topMargin=dp(4);bottomMargin=dp(6)}) }
         val validation=label("",11,true,Color.rgb(186,26,26)).apply{visibility=View.GONE};form.addView(validation,lp(-1,-2,8))
         val actions=LinearLayout(this);val remove=button("Remove player",Color.rgb(186,26,26),Color.WHITE){players.removeAt(index);saveState();dialog.dismiss()}.apply{fitSingleLine(this)};actions.addView(remove,LinearLayout.LayoutParams(0,dp(52),1f).apply{rightMargin=dp(6)});val save=button("Save player",accent,onAccent()){if(getGender().isBlank() || getPref().isBlank()){validation.text=tr("Choose both gender and interaction preferences to save this player.");validation.visibility=View.VISIBLE;return@button};player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.comfort=comfort.progress+1;player.comfortEnabled=comfortEnabled&&premium;player.specificPlayers.clear();player.specificPlayers.addAll(selected);committed=true;saveState();dialog.dismiss()}.apply{fitSingleLine(this)};actions.addView(save,LinearLayout.LayoutParams(0,dp(52),1f).apply{leftMargin=dp(6)});form.addView(actions,lp(-1,dp(52),6));dialog.show();dialog.window?.apply{decorView.setPadding(0,0,0,0);setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(players.size<=3)WindowManager.LayoutParams.WRAP_CONTENT else (resources.displayMetrics.heightPixels*.88f).toInt());setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.4f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
@@ -537,7 +546,7 @@ class MainActivity : ComponentActivity() {
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},28,3,3)
-        val chosenLanguage=prefs.getString("uiLanguage","system") ?: "system"
+        val chosenLanguage=prefs.getString("uiLanguage","en") ?: "en"
         settingsRow(group,"language","Language",languageDisplayName(chosenLanguage),{openScreen("language"){showLanguage()}},3,3,3)
         settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},3,3,3)
         settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},3,28,3)
@@ -570,8 +579,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showLanguage(){
         val root=base();title(root,"Language")
-        root.addView(label("The interface follows your phone language by default. Game prompts remain in their original prompt-file language.",13,false,muted).apply{setPadding(0,dp(18),0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
-        val selected=prefs.getString("uiLanguage","system") ?: "system"
+        val selected=prefs.getString("uiLanguage","en") ?: "en"
         (listOf("system")+supportedLanguages).forEach { code ->
             val active=code==selected
             val row=LinearLayout(this).apply {
@@ -580,7 +588,7 @@ class MainActivity : ComponentActivity() {
                 background=if(active)accentOutline(18)else shape(surface,18,1)
                 setOnClickListener {
                     prefs.edit().putString("uiLanguage",code).apply()
-                    applyLanguageDirection();showLanguage()
+                    loadDecks();configureSpeechVoice();applyLanguageDirection();showLanguage()
                 }
             }
             row.addView(label(languageDisplayName(code),14,true,if(active)accent else ink,Gravity.CENTER_VERTICAL),weight(1f))
@@ -661,13 +669,13 @@ class MainActivity : ComponentActivity() {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))
         title(root,titleText,true,{goBack()},0)
-        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(0,dp(16),dp(2),dp(16)) }
-        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false };styleScrollBar(scroll)
-        scroll.addView(label(tr(body),15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(dp(18),0,dp(18),dp(10)) })
+        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); clipToOutline=true; setPadding(0,dp(16),dp(8),dp(16)) }
+        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=true };styleScrollBar(scroll)
+        scroll.addView(label(android.text.SpannableString(body),15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(dp(18),0,dp(18),dp(10)) })
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
-    private fun showGameRules(){ informationPage("Game rules",gameRulesText()) }
+    private fun showGameRules(){ informationPage("Game rules",trKey("__game_rules_body",gameRulesText())) }
     private fun gameRulesText():String = """
 • Add at least two players. Each player chooses a gender and who they want to interact with: Men, Women, Men & women, or selected Specific players.
 
@@ -716,16 +724,16 @@ For privacy questions, use the contact options available through that GitHub pro
 
 If this policy changes, the current text will be provided in the app and on its published privacy-policy page.
 """.trimIndent()
-    private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
+    private fun showPrivacyPolicy(){ informationPage("Privacy policy",trKey("__privacy_policy_body",privacyText())) }
     private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
     private fun showAppInformation(){ informationPage("About app","${tr("App version")}\n${installedVersion()}\n\n${tr("Minimum SDK")}\nAndroid 7.0 · API 24\n\n${tr("Target SDK")}\nAndroid 16 · API 36\n\n${tr("Supported API levels")}\nAPI 24 to API 36") }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)
-        val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(18),dp(18),dp(18),dp(18)) }
+        val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); clipToOutline=true; setPadding(dp(18),dp(18),dp(18),dp(18)) }
         shell.addView(label("Privacy policy",22,true))
         shell.addView(label("Before you start, please read how Truth or Dare handles your data.",13,false,muted).apply { setPadding(0,dp(6),0,dp(8)) })
         val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll)
-        scroll.addView(label(tr(privacyText()),13,false,ink).apply { setLineSpacing(dp(5).toFloat(),1f); setPadding(0,0,dp(18),dp(8)) })
+        scroll.addView(label(android.text.SpannableString(trKey("__privacy_policy_body",privacyText())),13,false,ink).apply { setLineSpacing(dp(5).toFloat(),1f); setPadding(0,0,dp(18),dp(8)) })
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply { rightMargin=dp(-16) })
         shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); if(!prefs.getBoolean("premiumWelcomeSeen",false)){ offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } } },lp(-1,dp(54),0))
         dialog.setContentView(shell); dialog.setCancelable(false); dialog.show()
@@ -1099,7 +1107,7 @@ If this policy changes, the current text will be provided in the app and on its 
     }
     private fun showPremium(firstLaunch:Boolean=false, planIds:List<String> = listOf("full_app_unlock","premium_annual","premium_levels")){
         if(premium) return
-        val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
+        val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this).apply { background=shape(surface,28,1);clipToOutline=true };styleScrollBar(scroll); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
         val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(closeButton{dialog.dismiss()},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END or Gravity.CENTER_VERTICAL));shell.addView(head,lp(-1,dp(46),0))
         shell.addView(label(if(firstLaunch)"Your introductory discounts are ready." else "Get every level and setting.",14,false,muted,Gravity.CENTER).apply{setPadding(0,dp(4),0,dp(12))})
         shell.addView(premiumSupportBanner(),lp(-1,-2,6))
@@ -1118,9 +1126,27 @@ If this policy changes, the current text will be provided in the app and on its 
         shell.addView(button("Restore purchases",surface,ink){queryOwned(true)},lp(-1,dp(48),8))
         dialog.setContentView(scroll);dialog.show();dialog.window?.apply{decorView.setPadding(0,0,0,0);setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));val preferredHeight=if(firstLaunch)dp(if(planIds.size==3)806 else if(planIds.size==2)702 else 592) else -2;setLayout(resources.displayMetrics.widthPixels-dp(32),if(firstLaunch)preferredHeight.coerceAtMost(resources.displayMetrics.heightPixels-dp(32)) else preferredHeight);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.45f;if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)blurBehindRadius=dp(20)};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)}
     }
+    private fun promptFileSuffix(language:String):String = when(language){
+        "zh-CN"->"chinese_simplified"
+        "zh-TW"->"chinese_traditional"
+        else->Locale.forLanguageTag(language).getDisplayLanguage(Locale.ENGLISH).lowercase(Locale.ENGLISH).replace(" ","_")
+    }
+    private fun promptJsonForLanguage():JSONObject {
+        val language=effectiveLanguage()
+        val candidates=listOf(
+            "truth_or_dare_prompts_${promptFileSuffix(language)}.json",
+            "truth_or_dare_prompts_${language.lowercase(Locale.ENGLISH)}.json",
+            "truth_or_dare_prompts_english.json"
+        ).distinct()
+        candidates.forEach { name ->
+            runCatching { JSONObject(assets.open(name).bufferedReader().use{it.readText()}) }.getOrNull()?.let{return it}
+        }
+        error("No prompt file is available")
+    }
     private fun loadDecks(){
+        decks.clear()
         try{
-            val obj=JSONObject(assets.open("truth_or_dare_prompts.json").bufferedReader().use{it.readText()})
+            val obj=promptJsonForLanguage()
             val plans=obj.optJSONObject("plans") ?: obj
             mapOf("soft" to "casual","hot" to "flirty","hard" to "hot","extreme" to "naughty").forEach { (level,sourceLevel) ->
                 val list=mutableListOf<Card>(); val plan=plans.optJSONObject(sourceLevel) ?: plans.optJSONObject(level)

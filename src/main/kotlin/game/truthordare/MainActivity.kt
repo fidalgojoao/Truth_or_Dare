@@ -16,6 +16,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import android.net.Uri
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -30,6 +33,11 @@ import android.animation.ValueAnimator
 import android.speech.tts.TextToSpeech
 import android.view.animation.DecelerateInterpolator
 import com.android.billingclient.api.*
+import java.nio.charset.StandardCharsets
+import java.security.KeyStore
+import javax.crypto.KeyGenerator
+import javax.crypto.Mac
+import javax.crypto.SecretKey
 
 class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("truth_or_dare", MODE_PRIVATE) }
@@ -46,6 +54,8 @@ class MainActivity : ComponentActivity() {
     private var reverseDareTarget: Player? = null
     private var reverseDarePending = false
     private var premium = false
+    private val offlinePremiumWindowMs = 3L * 24L * 60L * 60L * 1000L
+    private val premiumCacheKeyAlias = "truth_or_dare_premium_entitlement_v1"
     private val ownedProductIds = mutableSetOf<String>()
     private var offerAfterPrivacy = false
     private var firstOfferShown = false
@@ -585,6 +595,37 @@ class MainActivity : ComponentActivity() {
             customCards.addAll(imported); saveState(); Toast.makeText(this,"Imported ${imported.size} cards.",Toast.LENGTH_SHORT).show(); showCustomCards()
         } catch(e:Exception) { Toast.makeText(this,"Could not read that card file.",Toast.LENGTH_LONG).show() }
     }
+    private fun entitlementMac(): Mac {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val key = if (keyStore.containsAlias(premiumCacheKeyAlias)) {
+            keyStore.getKey(premiumCacheKeyAlias, null) as SecretKey
+        } else {
+            KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore").apply {
+                init(KeyGenParameterSpec.Builder(premiumCacheKeyAlias, KeyProperties.PURPOSE_SIGN)
+                    .setDigests(KeyProperties.DIGEST_SHA256)
+                    .build())
+            }.generateKey()
+        }
+        return Mac.getInstance("HmacSHA256").apply { init(key) }
+    }
+    private fun premiumCacheSignature(expiresAt: Long): String =
+        Base64.encodeToString(entitlementMac().doFinal("$packageName|$expiresAt".toByteArray(StandardCharsets.UTF_8)), Base64.NO_WRAP)
+    private fun hasValidCachedPremiumEntitlement(): Boolean = try {
+        val expiresAt = prefs.getLong("premiumCacheExpiresAt", 0L)
+        val signature = prefs.getString("premiumCacheSignature", "") ?: ""
+        expiresAt > System.currentTimeMillis() && signature.isNotBlank() &&
+            signature == premiumCacheSignature(expiresAt)
+    } catch (_: Exception) { false }
+    private fun cachePremiumEntitlement() {
+        try {
+            val expiresAt = System.currentTimeMillis() + offlinePremiumWindowMs
+            prefs.edit().putLong("premiumCacheExpiresAt", expiresAt)
+                .putString("premiumCacheSignature", premiumCacheSignature(expiresAt)).apply()
+        } catch (_: Exception) { }
+    }
+    private fun clearCachedPremiumEntitlement() {
+        prefs.edit().remove("premiumCacheExpiresAt").remove("premiumCacheSignature").apply()
+    }
     private fun connectBilling(){
         billingClient.startConnection(object: BillingClientStateListener {
             override fun onBillingSetupFinished(result:BillingResult){
@@ -644,7 +685,17 @@ class MainActivity : ComponentActivity() {
         val owned=purchases.filter { it.purchaseState==Purchase.PurchaseState.PURCHASED }.flatMap { it.products }.filter { it in setOf("premium_levels","full_app_unlock","premium_annual") }.toSet()
         if(replaceEntitlements) ownedProductIds.clear()
         ownedProductIds.addAll(owned)
-        premium=ownedProductIds.isNotEmpty()
+        premium = when {
+            ownedProductIds.isNotEmpty() -> {
+                cachePremiumEntitlement()
+                true
+            }
+            replaceEntitlements -> {
+                clearCachedPremiumEntitlement()
+                false
+            }
+            else -> premium || hasValidCachedPremiumEntitlement()
+        }
         saveState()
         if(wasPremium!=premium && currentScreen=="home") runOnUiThread { showHome() }
         purchases.filter { it.purchaseState==Purchase.PurchaseState.PURCHASED && !it.isAcknowledged }.forEach { purchase -> billingClient.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()){} }
@@ -703,7 +754,7 @@ class MainActivity : ComponentActivity() {
             val fallback=mutableListOf(Card("truth","What is a small thing that made you smile today?"),Card("dare","Dance with no music for 30 seconds."))
             decks["soft"]=fallback;decks["hot"]=fallback;decks["hard"]=fallback;decks["extreme"]=fallback
         }
-    }    private fun loadState(){themeMode=prefs.getString("theme","system")?:"system";useSystemColors=prefs.getBoolean("systemColors",false);limitTruths=prefs.getBoolean("limit",true);truthLimit=prefs.getInt("truthLimit",2).coerceIn(1,5);reverseDares=prefs.getBoolean("reverseDares",false);reverseDareLimit=prefs.getInt("reverseDareLimit",2).coerceIn(1,5);premium=false;ttsEnabled=prefs.getBoolean("ttsEnabled",false);val json=prefs.getString("players","[]")?:"[]";try{val a=org.json.JSONArray(json);for(i in 0 until a.length()){val x=a.getJSONObject(i);players.add(Player(x.optString("name"),x.optString("gender","").let{if(it=="Other")"" else it},x.optString("preference",""),x.optInt("truthStreak"),x.optInt("dareStreak"),x.optInt("comfort",5).coerceIn(1,10),x.optBoolean("comfortEnabled",false),MutableList(x.optJSONArray("specific")?.length()?:0){j->x.optJSONArray("specific")?.optString(j)?:""}.filter{it.isNotBlank()}.toMutableSet()))}}catch(_:Exception){};val cards=prefs.getString("cards","[]")?:"[]";try{val a=org.json.JSONArray(cards);for(i in 0 until a.length()){val x=a.getJSONObject(i);customCards.add(Card(x.optString("kind"),x.optString("text")))}}catch(_:Exception){}}
+    }    private fun loadState(){themeMode=prefs.getString("theme","system")?:"system";useSystemColors=prefs.getBoolean("systemColors",false);limitTruths=prefs.getBoolean("limit",true);truthLimit=prefs.getInt("truthLimit",2).coerceIn(1,5);reverseDares=prefs.getBoolean("reverseDares",false);reverseDareLimit=prefs.getInt("reverseDareLimit",2).coerceIn(1,5);premium=hasValidCachedPremiumEntitlement();ttsEnabled=prefs.getBoolean("ttsEnabled",false);val json=prefs.getString("players","[]")?:"[]";try{val a=org.json.JSONArray(json);for(i in 0 until a.length()){val x=a.getJSONObject(i);players.add(Player(x.optString("name"),x.optString("gender","").let{if(it=="Other")"" else it},x.optString("preference",""),x.optInt("truthStreak"),x.optInt("dareStreak"),x.optInt("comfort",5).coerceIn(1,10),x.optBoolean("comfortEnabled",false),MutableList(x.optJSONArray("specific")?.length()?:0){j->x.optJSONArray("specific")?.optString(j)?:""}.filter{it.isNotBlank()}.toMutableSet()))}}catch(_:Exception){};val cards=prefs.getString("cards","[]")?:"[]";try{val a=org.json.JSONArray(cards);for(i in 0 until a.length()){val x=a.getJSONObject(i);customCards.add(Card(x.optString("kind"),x.optString("text")))}}catch(_:Exception){}}
     private fun saveState(){val a=org.json.JSONArray();players.forEach{p->a.put(JSONObject().put("name",p.name).put("gender",p.gender).put("preference",p.preference).put("truthStreak",p.truthStreak).put("dareStreak",p.dareStreak).put("comfort",p.comfort).put("comfortEnabled",p.comfortEnabled).put("specific",org.json.JSONArray(p.specificPlayers.toList())))};val c=org.json.JSONArray();customCards.forEach{x->c.put(JSONObject().put("kind",x.kind).put("text",x.text))};prefs.edit().putString("theme",themeMode).putBoolean("systemColors",useSystemColors).putBoolean("limit",limitTruths).putInt("truthLimit",truthLimit).putBoolean("reverseDares",reverseDares).putInt("reverseDareLimit",reverseDareLimit).remove("premium").putBoolean("ttsEnabled",ttsEnabled).putString("players",a.toString()).putString("cards",c.toString()).apply()}
     data class Player(var name:String,var gender:String="",var preference:String="",var truthStreak:Int=0,var dareStreak:Int=0,var comfort:Int=5,var comfortEnabled:Boolean=false,var specificPlayers:MutableSet<String> = mutableSetOf())
     data class Card(var kind:String,var text:String,var targetName:String?=null)

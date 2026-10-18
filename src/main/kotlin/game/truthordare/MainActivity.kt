@@ -46,14 +46,15 @@ class MainActivity : ComponentActivity() {
     private val decks = mutableMapOf<String, MutableList<Card>>()
     private var selectedLevel = "soft"
     private var useSystemColors = false
-    private var themeMode = "system"
-    private var limitTruths = true
+    private var themeMode = "dark"
+    private var limitTruths = false
     private var truthLimit = 2
     private var reverseDares = false
     private var reverseDareLimit = 2
     private var reverseDareTarget: Player? = null
     private var reverseDarePending = false
     private var premium = false
+    private var lifetimePremium = false
     private var premiumDialog: Dialog? = null
     private val offlinePremiumWindowMs = 30L * 24L * 60L * 60L * 1000L
     private val premiumCacheKeyAlias = "truth_or_dare_premium_entitlement_v1"
@@ -81,11 +82,13 @@ class MainActivity : ComponentActivity() {
     private val importCardsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { importCardsFrom(it) } }
 
     private fun openScreen(screen:String, render:()->Unit) {
+        if(currentScreen=="card" && screen!="card") textToSpeech?.stop()
         if(currentScreen != screen) navigationStack.addLast(currentScreen)
         currentScreen=screen
         render()
     }
     private fun goBack() {
+        textToSpeech?.stop()
         if(currentScreen in setOf("spinner","choices","card")) {
             activeTimer?.cancel()
             navigationStack.clear()
@@ -170,6 +173,14 @@ class MainActivity : ComponentActivity() {
     private fun onAccent(): Int = contrastOn(accent)
     private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .36) Color.rgb(23,37,50) else Color.WHITE
     private fun shape(color: Int, radius: Int = 24, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat(); if (stroke > 0) setStroke(dp(stroke), strokeColor) }
+    private fun styleScrollBar(scroll:ScrollView, enabled:Boolean=true) {
+        scroll.isVerticalScrollBarEnabled=enabled
+        if(!enabled) return
+        scroll.scrollBarStyle=View.SCROLLBARS_INSIDE_OVERLAY
+        scroll.verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT
+        scroll.setScrollBarSize(dp(4))
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.Q) scroll.verticalScrollbarThumbDrawable=shape(accent,2)
+    }
     private fun groupedShape(color: Int, topRadius: Int, bottomRadius: Int, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply {
         setColor(color)
         val top = dp(topRadius).toFloat(); val bottom = dp(bottomRadius).toFloat()
@@ -189,6 +200,12 @@ class MainActivity : ComponentActivity() {
             knob.layoutParams=FrameLayout.LayoutParams(dp(32),dp(32),if(checked)Gravity.END or Gravity.CENTER_VERTICAL else Gravity.START or Gravity.CENTER_VERTICAL).apply{setMargins(dp(4),0,dp(4),0)}
         }
         holder.addView(knob); render(); holder.setOnClickListener{ if(enabled){ checked=!checked;render();onChanged(checked) } }; return holder
+    }
+    private fun animateNumberChoice(view:View, onComplete:()->Unit) {
+        view.isEnabled=false
+        view.animate().scaleX(.86f).scaleY(.86f).setDuration(90).withEndAction {
+            view.animate().scaleX(1f).scaleY(1f).setDuration(130).withEndAction(onComplete).start()
+        }.start()
     }
 
     private fun prepareWindow() {
@@ -215,7 +232,7 @@ class MainActivity : ComponentActivity() {
             }
             setContentView(root); return root
         }
-        val sv = ScrollView(this).apply { isFillViewport = true; clipToPadding = false; isVerticalScrollBarEnabled = !hideScrollBar; setBackgroundColor(this@MainActivity.background); addView(root) }
+        val sv = ScrollView(this).apply { isFillViewport = true; clipToPadding = false; setBackgroundColor(this@MainActivity.background); addView(root) }; styleScrollBar(sv,!hideScrollBar)
         if (dock == null) {
             ViewCompat.setOnApplyWindowInsetsListener(sv) { view, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -257,12 +274,15 @@ class MainActivity : ComponentActivity() {
         if(back) top.addView(backButton(backAction),FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL))
         top.addView(label(value,22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER))
         root.addView(top,lp(-1,dp(46),0).apply { leftMargin=dp(horizontalInset); rightMargin=dp(horizontalInset) })
-    }    private fun label(value: String, sp: Int = 14, bold: Boolean = false, color: Int = ink, gravity: Int = Gravity.START): TextView = TextView(this).apply { text = value; textSize = sp.toFloat(); setTextColor(color); this.gravity = gravity; typeface = android.graphics.Typeface.create("Google Sans Flex", if(bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL); includeFontPadding=false; if(bold) letterSpacing=.01f }
+    }    private fun label(value: CharSequence, sp: Int = 14, bold: Boolean = false, color: Int = ink, gravity: Int = Gravity.START): TextView = TextView(this).apply { text = value; textSize = sp.toFloat(); setTextColor(color); this.gravity = gravity; typeface = android.graphics.Typeface.create("Google Sans Flex", if(bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL); includeFontPadding=false; if(bold) letterSpacing=.01f }
     private fun button(value: String, color: Int = accent, fg: Int = Color.WHITE, click: () -> Unit): TextView = TextView(this).apply { text=value; textSize=15f; typeface=android.graphics.Typeface.create("Google Sans Flex",android.graphics.Typeface.BOLD); setTextColor(fg); gravity=Gravity.CENTER; minHeight=dp(52); background=shape(color,26); setPadding(dp(16),0,dp(16),0); setOnClickListener { click() } }
     private fun card(root: LinearLayout, margin: Int = 10): LinearLayout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(16),dp(16),dp(16),dp(16)); root.addView(this,lp(-1,-2,margin).apply { leftMargin=dp(16); rightMargin=dp(16) }) }
     private fun divider(root: LinearLayout, n: Int = 14) { root.addView(Space(this), lp(-1, dp(n),0)) }
     private fun mainMargin(view:View) { (view.layoutParams as? LinearLayout.LayoutParams)?.let { it.leftMargin=dp(16); it.rightMargin=dp(16); view.layoutParams=it } }
-    private fun collapsibleHeader(title:String, expanded:Boolean, toggle:()->Unit):FrameLayout = FrameLayout(this).apply {
+    private fun accentedHeader(prefix:String, value:String):CharSequence = android.text.SpannableString("$prefix$value").apply {
+        setSpan(android.text.style.ForegroundColorSpan(accent),prefix.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    private fun collapsibleHeader(title:CharSequence, expanded:Boolean, toggle:()->Unit):FrameLayout = FrameLayout(this).apply {
         addView(label(title,13,true,muted,Gravity.CENTER_VERTICAL),FrameLayout.LayoutParams(-1,dp(36),Gravity.CENTER_VERTICAL).apply { rightMargin=dp(36) })
         val arrow=ImageButton(this@MainActivity).apply {
             setImageResource(R.drawable.ic_expand_more)
@@ -270,7 +290,7 @@ class MainActivity : ComponentActivity() {
             background=null
             setPadding(dp(7),dp(7),dp(7),dp(7))
             rotation=if(expanded)180f else 0f
-            contentDescription=if(expanded)"Collapse $title" else "Expand $title"
+            contentDescription=if(expanded)"Collapse ${title}" else "Expand ${title}"
             setOnClickListener {
                 isEnabled=false
                 animate().rotation(if(expanded)0f else 180f).setDuration(220).setInterpolator(DecelerateInterpolator()).withEndAction { toggle() }.start()
@@ -281,6 +301,7 @@ class MainActivity : ComponentActivity() {
 
     private fun applyThemeAndHome() { showHome() }
     private fun showHome() {
+        textToSpeech?.stop()
         activeTimer?.cancel()
         val play=button("Let's play  →",accent,onAccent(),{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,"Choose gender and interaction preferences for every player before playing.",Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f; minHeight=dp(66); isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
         val input=EditText(this).apply { hint="Player name"; textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
@@ -303,7 +324,7 @@ class MainActivity : ComponentActivity() {
         root.addView(brand,LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(16),dp(4),dp(16),dp(15)) })
 
         val playersPanel=card(root,0).apply { setPadding(dp(16),dp(16),dp(16),dp(16)) }; (playersPanel.layoutParams as LinearLayout.LayoutParams).setMargins(dp(16),0,dp(16),0)
-        playersPanel.addView(collapsibleHeader("PLAYERS: ${players.size}",playersPanelExpanded){playersPanelExpanded=!playersPanelExpanded;showHome()})
+        playersPanel.addView(collapsibleHeader(accentedHeader("PLAYERS ADDED: ",players.size.toString()),playersPanelExpanded){playersPanelExpanded=!playersPanelExpanded;showHome()})
         if(playersPanelExpanded) {
         playersPanel.addView(label("Add everyone, then edit their interaction preferences any time.",15,false,muted).apply { setPadding(0,dp(8),0,dp(8)) })
         if(players.size<2) playersPanel.addView(label(if(players.isEmpty()) "No players added yet. Add at least 2 players to start the game." else "Add 1 more player to start the game.",14,true,accent).apply { setPadding(0,0,0,dp(10)); setLineSpacing(dp(2).toFloat(),1.03f) })
@@ -327,14 +348,15 @@ class MainActivity : ComponentActivity() {
 
         divider(root,15)
         val levels=card(root,0).apply { setPadding(dp(16),dp(12),dp(16),dp(12)) }; (levels.layoutParams as LinearLayout.LayoutParams).setMargins(dp(16),0,dp(16),0)
-        levels.addView(collapsibleHeader("CHOOSE A LEVEL",levelsPanelExpanded){levelsPanelExpanded=!levelsPanelExpanded;showHome()})
+        val selectedLevelTitle=when(selectedLevel){"soft"->"SOFT 😎";"hot"->"HOT 😍";"hard"->"HARD 😉";"extreme"->"EXTREME 😈";"mydares"->"MY TRUTHS AND DARES ✏️";else->selectedLevel.uppercase()}
+        levels.addView(collapsibleHeader(accentedHeader("LEVEL SELECTED: ",selectedLevelTitle),levelsPanelExpanded){levelsPanelExpanded=!levelsPanelExpanded;showHome()})
         if(levelsPanelExpanded) {
         val grid=GridLayout(this).apply { columnCount=2; useDefaultMargins=false }
         val lockedFill=ColorUtils.blendARGB(surface,outline,.55f)
         fun levelCell(key:String, title:String, detail:String, locked:Boolean) {
             val unavailable=locked&&!premium
             val selected=selectedLevel==key&&!unavailable
-            val cell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER; background=shape(if(selected)accent else if(unavailable)lockedFill else surface,22,1); isClickable=true;setOnClickListener { if(unavailable)showPremium() else {selectedLevel=key;showHome()} } }
+            val cell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER; background=shape(if(selected)accent else if(unavailable)lockedFill else surface,22,1); isClickable=true;setOnClickListener { if(unavailable)showPremium() else {selectedLevel=key;saveState();showHome()} } }
             cell.addView(label(title,13,true,if(selected)onAccent() else if(unavailable)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
             cell.addView(label(detail,11,false,if(selected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
             val gp=GridLayout.LayoutParams().apply { width=0;height=dp(66);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(grid.childCount%2==0)0 else dp(4);val right=if(grid.childCount%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) };grid.addView(cell,gp)
@@ -342,7 +364,7 @@ class MainActivity : ComponentActivity() {
         levelCell("soft","Soft 😎","Easy & silly",false);levelCell("hot","Hot 😍","Flirty & bold",false);levelCell("hard","Hard 😉",if(premium)"Confident & intimate" else "Premium  🔒",true);levelCell("extreme","Extreme 😈",if(premium)"Bold & daring" else "Premium  🔒",true)
         val customLocked=!premium
         val customSelected=selectedLevel=="mydares"
-        val custom=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; isClickable=true; background=shape(if(customSelected)accent else if(customLocked)lockedFill else surface,22,1); setOnClickListener { if(customLocked)showPremium() else {selectedLevel="mydares";openScreen("custom"){showCustomCards()}} } }
+        val custom=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; isClickable=true; background=shape(if(customSelected)accent else if(customLocked)lockedFill else surface,22,1); setOnClickListener { if(customLocked)showPremium() else {selectedLevel="mydares";saveState();openScreen("custom"){showCustomCards()}} } }
         custom.addView(label("My truths and dares ✏️",13,true,if(customSelected)onAccent() else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
         custom.addView(label(if(customLocked)"Premium  🔒" else "Your custom cards",11,false,if(customSelected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
         grid.addView(custom,GridLayout.LayoutParams().apply{width=-1;height=dp(66);columnSpec=GridLayout.spec(0,2);setMargins(0,dp(2),0,dp(2))});levels.addView(grid)
@@ -358,7 +380,7 @@ class MainActivity : ComponentActivity() {
         form.addView(label("Gender",12,true).apply{setPadding(0,dp(8),0,dp(4))});val(gender,getGender)=choices(listOf("Man","Woman"),player.gender);form.addView(gender)
         val calibration=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(if(premium)surface else ColorUtils.blendARGB(surface,outline,.42f),16,1);setPadding(dp(16),dp(8),dp(16),dp(8));isClickable=!premium;setOnClickListener{if(!premium)showPremium()}};val calibrationHead=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val comfortTitle=label("Comfort-zone calibration · ${player.comfort}/10"+if(!premium)"  🔒" else "",12,true,if(premium)ink else muted);calibrationHead.addView(comfortTitle,weight(1f));var comfortEnabled=player.comfortEnabled;calibrationHead.addView(expressiveToggle(comfortEnabled&&premium,true){on->if(premium)comfortEnabled=on else showPremium()},lp(dp(58),dp(36),0));calibration.addView(calibrationHead);calibration.addView(label(if(premium)"Adjust easier prompts for this player." else "Tap to view Premium plans and unlock per-player prompt adjustment.",10,false,muted));val comfort=SeekBar(this).apply{max=9;progress=player.comfort-1;progressTintList=android.content.res.ColorStateList.valueOf(accent);thumbTintList=android.content.res.ColorStateList.valueOf(accent);backgroundTintList=android.content.res.ColorStateList.valueOf(outline);minimumHeight=dp(34);isEnabled=premium};comfort.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(s:SeekBar?,v:Int,u:Boolean){comfortTitle.text="Comfort-zone calibration · ${v+1}/10"+if(!premium)"  🔒" else ""};override fun onStartTrackingTouch(s:SeekBar?){};override fun onStopTrackingTouch(s:SeekBar?){}});calibration.addView(comfort,lp(-1,dp(26),0));calibration.addView(label("1 · Wholesome & soft                              10 · Chaos & spicy",10,false,muted,Gravity.CENTER));form.addView(calibration,lp(-1,-2,6))
         form.addView(label("Wants to interact with",12,true).apply{setPadding(0,dp(8),0,dp(4))});val refreshers=mutableListOf<()->Unit>();val(pref,getPref)=choices(listOf("Men","Women","Men & women","Specific players"),player.preference,2){refreshers.forEach{it()}};form.addView(pref);form.addView(label("Choose specific players to decide exactly who this player can be matched with.",12,false,muted).apply{setPadding(0,dp(8),0,dp(6))})
-        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0)}
+        val selected=player.specificPlayers.toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(4))};val box=ScrollView(this).apply{addView(list);background=shape(surface,14,1);isFillViewport=true;setPadding(0,0,dp(2),0);styleScrollBar(this)}
         players.filterIndexed{i,_->i!=index}.forEach{p->val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(this@MainActivity.background,14,1);setPadding(dp(10),0,dp(10),0)};val check=CheckBox(this).apply{buttonTintList=android.content.res.ColorStateList.valueOf(accent);isClickable=false};val copy=label("${p.name}  ·  ${p.gender}",13,true);row.addView(check,lp(dp(40),dp(40),0));row.addView(copy,weight(1f));fun render(){val yes=getPref()=="Specific players";check.isChecked=p.name in selected;row.alpha=if(yes)1f else .38f;copy.setTextColor(if(yes)ink else muted)};row.setOnClickListener{if(getPref()=="Specific players"){if(p.name in selected)selected.remove(p.name)else selected.add(p.name);render()}};refreshers.add(::render);render();list.addView(row,lp(-1,dp(46),2))};val otherPlayers=players.size-1;if(otherPlayers>0){ form.addView(box,LinearLayout.LayoutParams(-1,dp(if(otherPlayers>=3)154 else otherPlayers*48+12)).apply{topMargin=dp(4);bottomMargin=dp(6)}) }
         val validation=label("",11,true,Color.rgb(186,26,26)).apply{visibility=View.GONE};form.addView(validation,lp(-1,-2,8))
         val actions=LinearLayout(this);actions.addView(button("Remove player",Color.rgb(186,26,26),Color.WHITE){players.removeAt(index);saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{rightMargin=dp(6)});actions.addView(button("Save player",accent,onAccent()){if(getGender().isBlank() || getPref().isBlank()){validation.text="Choose both gender and interaction preferences to save this player.";validation.visibility=View.VISIBLE;return@button};player.name=name.text.toString().trim().ifEmpty{player.name};player.gender=getGender();player.preference=getPref();player.comfort=comfort.progress+1;player.comfortEnabled=comfortEnabled&&premium;player.specificPlayers.clear();player.specificPlayers.addAll(selected);committed=true;saveState();dialog.dismiss()},LinearLayout.LayoutParams(0,dp(52),1f).apply{leftMargin=dp(6)});form.addView(actions,lp(-1,dp(52),6));dialog.show();dialog.window?.apply{decorView.setPadding(0,0,0,0);setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(32),if(players.size<=3)WindowManager.LayoutParams.WRAP_CONTENT else (resources.displayMetrics.heightPixels*.88f).toInt());setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.4f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
@@ -440,14 +462,15 @@ class MainActivity : ComponentActivity() {
         val values=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; alpha=if(locked).48f else 1f }
         (1..5).forEach { value ->
             val active=value==truthLimit
-            val choice=button(value.toString(),if(active&&!locked)accent else surface,if(active&&!locked)onAccent() else muted) { if(!locked){ truthLimit=value; saveState(); showGameplay() } }.apply { minHeight=dp(44); textSize=15f; isEnabled=!locked; background=shape(if(active&&!locked)accent else surface,18,1) }
+            lateinit var choice:TextView
+            choice=button(value.toString(),if(active&&!locked)accent else surface,if(active&&!locked)onAccent() else muted) { if(!locked && value!=truthLimit) animateNumberChoice(choice){ truthLimit=value; saveState(); showGameplay() } }.apply { minHeight=dp(44); textSize=15f; isEnabled=!locked; background=shape(if(active&&!locked)accent else surface,18,1) }
             values.addView(choice,LinearLayout.LayoutParams(0,dp(44),1f).apply { if(value>1) leftMargin=dp(5) })
         }
         c.addView(values)
         c.addView(label(if(locked)"Unlock Premium Levels to choose a custom truth limit." else "Each player can choose up to $truthLimit truth${if(truthLimit==1)"" else "s"} before Dare is required.",12,false,muted).apply { setPadding(0,dp(10),0,dp(2)) })
         val reverse=groupCard(3,28); group.addView(reverse,lp(-1,-2,0))
         val head=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};val reverseCopy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};reverseCopy.addView(label("Reverse Dare"+if(locked)"  🔒" else "",16,true,if(locked)muted else ink));reverseCopy.addView(label(if(locked)"Premium feature · requires Premium Levels." else "After consecutive dares, allow the player to assign a dare to another random player.",12,false,muted));head.addView(reverseCopy,weight(1f));head.addView(expressiveToggle(!locked&&reverseDares,!locked){on->reverseDares=on;saveState();showGameplay()},lp(dp(64),dp(40),0));reverse.addView(head)
-        reverse.addView(label("Dares before Reverse Dare",13,true,if(locked)muted else ink).apply{setPadding(0,dp(14),0,dp(7))});val counts=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;alpha=if(locked).48f else 1f};(1..5).forEach{value->val active=value==reverseDareLimit;val choice=button(value.toString(),if(active&&!locked)accent else surface,if(active&&!locked)onAccent()else muted){if(!locked){reverseDareLimit=value;saveState();showGameplay()}}.apply{minHeight=dp(44);textSize=15f;isEnabled=!locked;background=shape(if(active&&!locked)accent else surface,18,1)};counts.addView(choice,LinearLayout.LayoutParams(0,dp(44),1f).apply{if(value>1)leftMargin=dp(5)})};reverse.addView(counts)
+        reverse.addView(label("Dares before Reverse Dare",13,true,if(locked)muted else ink).apply{setPadding(0,dp(14),0,dp(7))});val counts=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;alpha=if(locked).48f else 1f};(1..5).forEach{value->val active=value==reverseDareLimit;lateinit var choice:TextView;choice=button(value.toString(),if(active&&!locked)accent else surface,if(active&&!locked)onAccent()else muted){if(!locked && value!=reverseDareLimit)animateNumberChoice(choice){reverseDareLimit=value;saveState();showGameplay()}}.apply{minHeight=dp(44);textSize=15f;isEnabled=!locked;background=shape(if(active&&!locked)accent else surface,18,1)};counts.addView(choice,LinearLayout.LayoutParams(0,dp(44),1f).apply{if(value>1)leftMargin=dp(5)})};reverse.addView(counts)
     }
     private fun showAbout(){
         val root=base(); title(root,"General Information")
@@ -456,21 +479,70 @@ class MainActivity : ComponentActivity() {
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
         settingsRow(group,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},28,3,3,showArrow=false)
         settingsRow(group,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},3,3,3,showArrow=false)
-        settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},3,3,3,showArrow=false)
-        settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},3,3,3,showArrow=false)
-        settingsRow(group,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},3,28,3,showArrow=false)
+        settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},3,if(lifetimePremium)28 else 3,3,showArrow=false)
+        if(!lifetimePremium) {
+            settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},3,3,3,showArrow=false)
+            settingsRow(group,"↻","Restore purchases","Check Google Play for eligible purchases",{queryOwned(true)},3,28,3,showArrow=false)
+        }
     }    private fun informationPage(titleText:String, body:String) {
         val root=base(scroll=false)
         root.setPadding(dp(16),0,dp(16),dp(16))
         title(root,titleText,true,{goBack()},0)
-        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(dp(18),dp(16),dp(18),dp(16)) }
-        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false; isVerticalScrollBarEnabled=true; scrollBarStyle=View.SCROLLBARS_INSIDE_INSET; verticalScrollbarPosition=View.SCROLLBAR_POSITION_RIGHT; setScrollBarSize(dp(3)); setPadding(0,0,dp(2),0) }
-        scroll.addView(label(body,15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(0,0,dp(10),dp(10)) })
+        val c=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,30,1); setPadding(0,dp(16),dp(2),dp(16)) }
+        val scroll=ScrollView(this).apply { isFillViewport=true; clipToPadding=false };styleScrollBar(scroll)
+        scroll.addView(label(body,15,false,ink).apply { setLineSpacing(dp(7).toFloat(),1.0f); setPadding(dp(18),0,dp(18),dp(10)) })
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
-    private fun showGameRules(){ informationPage("Game rules","• Add at least two players and set each player's gender and interaction preferences.\n\n• A player is chosen at random. The same player cannot be chosen twice in a row; with four or more players, everyone is selected before anyone repeats.\n\n• Choose Truth or Dare. After two Truth choices in a row, that player must choose Dare next time.\n\n• Targeted prompts follow the active player's saved preference: Men, Women, Men & women, or only their selected specific players.\n\n• Every prompt can be passed or skipped. Keep the game respectful, consensual, and free of physical harm.") }
-    private fun privacyText():String = "Effective date: 15 October 2026\n\nTruth or Dare is designed to work locally on your device. The app stores player names, preferences, selected level, custom cards, and game progress only in local app storage so your group can resume later.\n\nWe do not collect, sell, share, or transmit personal information. We do not use advertising, analytics, accounts, location, contacts, camera, microphone, nearby devices, or Bluetooth.\n\nGoogle Play Billing is used only when you choose to buy the optional Premium Levels one-time product. Google processes payment information under its own privacy policy; this app does not receive or store payment card details.\n\nYou can delete local game information at any time by clearing the app's storage or uninstalling the app.\n\nIf this policy changes, the updated version will be included in the app and release notes."
+    private fun showGameRules(){ informationPage("Game rules",gameRulesText()) }
+    private fun gameRulesText():String = """
+• Add at least two players. Each player chooses a gender and who they want to interact with: Men, Women, Men & women, or selected Specific players.
+
+• The spinner chooses turns fairly. The same player cannot be selected twice in a row. With four or more players, everyone is selected before anyone repeats.
+
+• On each turn, choose Truth or Dare. You may choose another prompt before completing the turn.
+
+• Choose a level: Soft for easy and silly prompts, or Hot for flirty and bold prompts.
+
+• PREMIUM — Hard and Extreme add more confident, intimate, bold, and daring prompts.
+
+• PREMIUM — My truths and dares lets you create, edit, delete, import, export, and play your own custom cards.
+
+• PREMIUM — Comfort-zone calibration sets a 1–10 intensity limit for each player. A targeted prompt respects the lower enabled comfort setting of everyone involved.
+
+• PREMIUM — Limit consecutive truths can require a Dare after the selected number of Truth choices.
+
+• PREMIUM — Reverse Dare can let a player assign a dare to another randomly selected player after the configured number of consecutive dares.
+
+• Targeted prompts follow the active player's interaction preference and never deliberately choose an excluded player.
+
+• The speaker button can read the displayed prompt aloud through the device's configured text-to-speech engine.
+
+• Keep every action voluntary. Anyone may skip a prompt. Stop immediately when someone is uncomfortable, and keep play consensual and free from harm.
+""".trimIndent()
+    private fun privacyText():String = """
+Truth or Dare is a local party game. It does not require an account and does not operate an advertising, analytics, or remote gameplay server.
+
+Data stored on your device may include player names, gender and interaction preferences, specific-player selections, comfort-zone settings, selected game level, custom cards, gameplay progress, appearance and gameplay settings, and a protected Premium entitlement status. This information is used only to provide the app's features and resume your game.
+
+The app does not sell your information. The developer does not receive or share your locally stored game data. Truth or Dare does not request access to your location, contacts, camera, microphone, Bluetooth, or other nearby devices.
+
+When you choose a Premium plan or restore purchases, the app uses Google Play Billing. Google Play processes the transaction and provides the app with product and purchase status information needed to unlock and acknowledge the purchase. The app does not receive or store your payment card details. A protected Premium status may be cached locally for up to 30 days so paid features can continue working temporarily without internet access.
+
+If you enable prompt narration, the displayed prompt is passed to your device's configured text-to-speech engine. Its processing is controlled by that engine and its provider.
+
+Custom card import and export occurs only when you choose a file or destination through Android's system file picker. Exported files remain under your control.
+
+Local data remains on the device until you edit it, delete it, clear the app's storage, or uninstall the app. Files you export must be deleted separately. Google Play may retain purchase records under its own policies.
+
+Truth or Dare is intended for adults and is not directed to children.
+
+The published privacy policy is available at: github.com/joaofidalgo1998/joaofidalgo1998/blob/main/truth-or-dare-privacy-policy.md
+
+For privacy questions, use the contact options available through that GitHub profile.
+
+If this policy changes, the current text will be provided in the app and on its published privacy-policy page.
+""".trimIndent()
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
     private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
     private fun showAppInformation(){ informationPage("About app","App version\n${installedVersion()}\n\nMinimum SDK\nAndroid 7.0 · API 24\n\nTarget SDK\nAndroid 16 · API 36\n\nSupported API levels\nAPI 24 to API 36") }
@@ -479,12 +551,12 @@ class MainActivity : ComponentActivity() {
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(18),dp(18),dp(18),dp(18)) }
         shell.addView(label("Privacy policy",22,true))
         shell.addView(label("Before you start, please read how Truth or Dare handles your data.",13,false,muted).apply { setPadding(0,dp(6),0,dp(8)) })
-        val scroll=ScrollView(this)
-        scroll.addView(label(privacyText(),13,false,ink).apply { setLineSpacing(dp(5).toFloat(),1f); setPadding(0,0,0,dp(8)) })
-        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll)
+        scroll.addView(label(privacyText(),13,false,ink).apply { setLineSpacing(dp(5).toFloat(),1f); setPadding(0,0,dp(18),dp(8)) })
+        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply { rightMargin=dp(-16) })
         shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } },lp(-1,dp(54),0))
         dialog.setContentView(shell); dialog.setCancelable(false); dialog.show()
-        dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),(resources.displayMetrics.heightPixels*.76f).toInt()); attributes=attributes.apply { dimAmount=.42f; if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) blurBehindRadius=dp(22) }; addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND); if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND) }
+        dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); val dialogHeight=((resources.displayMetrics.heightPixels*.76f).toInt()+dp(40)).coerceAtMost(resources.displayMetrics.heightPixels-dp(32)); setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),dialogHeight); setGravity(Gravity.CENTER); attributes=attributes.apply { dimAmount=.42f; if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) blurBehindRadius=dp(22) }; addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND); if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND) }
     }    private fun eligibleTargets(active:Player):List<Player>{
         val others=players.filter { it !== active }
         return when(active.preference){
@@ -536,6 +608,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun showPlayerSpinner(){
+        textToSpeech?.stop()
         if(players.size<2){ showHome(); return }
         if(remainingTurnIndices.isEmpty()) {
             if(hasActiveTurn) round++
@@ -556,6 +629,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun ValueAnimator.doOnEnd(action:()->Unit) { addListener(object:android.animation.AnimatorListenerAdapter(){ override fun onAnimationEnd(animation:android.animation.Animator){ action() } }) }
     private fun showChoices(){
+        textToSpeech?.stop()
         val root=base(scroll=false);val player=players[turn%players.size];val truthAllowed=!(limitTruths&&player.truthStreak>=truthLimit);val reverseReady=premium&&reverseDares&&player.dareStreak>=reverseDareLimit
         val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START));val copy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;addView(label("ROUND $round",10,true,accent,Gravity.CENTER));addView(label("${player.name}'s turn",21,true,ink,Gravity.CENTER))};header.addView(copy,FrameLayout.LayoutParams(-1,dp(52),Gravity.CENTER));root.addView(header,lp(-1,dp(56),0))
         root.addView(label(if(!truthAllowed)"Truth is locked this turn — choose Dare to continue." else if(reverseReady)"Reverse Dare is ready — spin to assign a dare." else "Choose your move",if(truthAllowed)17 else 14,false,if(truthAllowed)muted else accent,Gravity.CENTER),lp(-1,dp(42),0))
@@ -673,12 +747,19 @@ class MainActivity : ComponentActivity() {
     }
     private fun premiumCacheSignature(expiresAt: Long): String =
         Base64.encodeToString(entitlementMac().doFinal("$packageName|$expiresAt".toByteArray(StandardCharsets.UTF_8)), Base64.NO_WRAP)
+    private fun lifetimeCacheSignature(expiresAt: Long): String =
+        Base64.encodeToString(entitlementMac().doFinal("$packageName|lifetime|$expiresAt".toByteArray(StandardCharsets.UTF_8)), Base64.NO_WRAP)
     private fun hasValidCachedPremiumEntitlement(): Boolean = try {
         val expiresAt = prefs.getLong("premiumCacheExpiresAt", 0L)
         val signature = prefs.getString("premiumCacheSignature", "") ?: ""
         expiresAt > System.currentTimeMillis() && signature.isNotBlank() &&
             signature == premiumCacheSignature(expiresAt)
     } catch (_: Exception) { false }
+    private fun hasValidCachedLifetimeEntitlement(): Boolean = try {
+        val expiresAt=prefs.getLong("lifetimeCacheExpiresAt",0L)
+        val signature=prefs.getString("lifetimeCacheSignature","") ?: ""
+        expiresAt>System.currentTimeMillis() && signature.isNotBlank() && signature==lifetimeCacheSignature(expiresAt)
+    } catch (_:Exception) { false }
     private fun cachePremiumEntitlement() {
         try {
             val expiresAt = System.currentTimeMillis() + offlinePremiumWindowMs
@@ -686,8 +767,18 @@ class MainActivity : ComponentActivity() {
                 .putString("premiumCacheSignature", premiumCacheSignature(expiresAt)).apply()
         } catch (_: Exception) { }
     }
+    private fun cacheLifetimeEntitlement() {
+        try {
+            val expiresAt=System.currentTimeMillis()+offlinePremiumWindowMs
+            prefs.edit().putLong("lifetimeCacheExpiresAt",expiresAt)
+                .putString("lifetimeCacheSignature",lifetimeCacheSignature(expiresAt)).apply()
+        } catch (_:Exception) { }
+    }
     private fun clearCachedPremiumEntitlement() {
         prefs.edit().remove("premiumCacheExpiresAt").remove("premiumCacheSignature").apply()
+    }
+    private fun clearCachedLifetimeEntitlement() {
+        prefs.edit().remove("lifetimeCacheExpiresAt").remove("lifetimeCacheSignature").apply()
     }
     private fun connectBilling(){
         billingClient.startConnection(object: BillingClientStateListener {
@@ -729,15 +820,16 @@ class MainActivity : ComponentActivity() {
         }
         val restored=mutableListOf<Purchase>()
         var remaining=2
+        var allSuccessful=true
         listOf(BillingClient.ProductType.INAPP,BillingClient.ProductType.SUBS).forEach { type ->
             billingClient.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(type).build()) { result, response ->
-                if(result.responseCode==BillingClient.BillingResponseCode.OK) restored.addAll(response)
+                if(result.responseCode==BillingClient.BillingResponseCode.OK) restored.addAll(response) else allSuccessful=false
                 remaining--
                 if(remaining==0){
-                    handlePurchases(restored,true)
+                    if(allSuccessful) handlePurchases(restored,true)
                     if(announce){
                         val found=restored.any { purchase -> purchase.purchaseState==Purchase.PurchaseState.PURCHASED && purchase.products.any { it=="premium_levels" || it=="full_app_unlock" || it=="premium_annual" } }
-                        Toast.makeText(this,if(found) "Purchases restored. Premium Levels unlocked." else "No eligible purchases were found for this Google Play account.",Toast.LENGTH_LONG).show()
+                        Toast.makeText(this,if(!allSuccessful) "Google Play could not be reached. Your valid offline Premium access is unchanged." else if(found) "Purchases restored. Premium Levels unlocked." else "No eligible purchases were found for this Google Play account.",Toast.LENGTH_LONG).show()
                     }
                     onComplete()
                 }
@@ -746,9 +838,15 @@ class MainActivity : ComponentActivity() {
     }
     private fun handlePurchases(purchases:List<Purchase>, replaceEntitlements:Boolean=false){
         val wasPremium=premium
+        val wasLifetime=lifetimePremium
         val owned=purchases.filter { it.purchaseState==Purchase.PurchaseState.PURCHASED }.flatMap { it.products }.filter { it in setOf("premium_levels","full_app_unlock","premium_annual") }.toSet()
         if(replaceEntitlements) ownedProductIds.clear()
         ownedProductIds.addAll(owned)
+        lifetimePremium=when {
+            "premium_levels" in ownedProductIds -> { cacheLifetimeEntitlement(); true }
+            replaceEntitlements -> { clearCachedLifetimeEntitlement(); false }
+            else -> lifetimePremium || hasValidCachedLifetimeEntitlement()
+        }
         premium = when {
             ownedProductIds.isNotEmpty() -> {
                 cachePremiumEntitlement()
@@ -761,19 +859,20 @@ class MainActivity : ComponentActivity() {
             else -> premium || hasValidCachedPremiumEntitlement()
         }
         saveState()
-        if(wasPremium!=premium) runOnUiThread {
+        if(wasPremium!=premium || wasLifetime!=lifetimePremium) runOnUiThread {
             premiumDialog?.dismiss()
             if(currentScreen=="home") showHome()
+            if(currentScreen=="about") showAbout()
         }
         purchases.filter { it.purchaseState==Purchase.PurchaseState.PURCHASED && !it.isAcknowledged }.forEach { purchase -> billingClient.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()){} }
     }
     private fun requestFirstOffer(){
-        if(firstOfferShown) return
+        if(firstOfferShown || lifetimePremium) return
         if(!::billingClient.isInitialized || !billingClient.isReady) return
         queryOwned(false) { showFirstOffer() }
     }
     private fun showFirstOffer(){
-        if(firstOfferShown || !offerAfterPrivacy) return
+        if(firstOfferShown || !offerAfterPrivacy || lifetimePremium) { offerAfterPrivacy=false; return }
         offerAfterPrivacy=false
         val plans=when {
             "premium_levels" in ownedProductIds -> emptyList()
@@ -806,7 +905,7 @@ class MainActivity : ComponentActivity() {
         root.addView(button("Restore purchases",surface,ink){queryOwned(true)},lp(-1,dp(54),4).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
     private fun showPremium(firstLaunch:Boolean=false, planIds:List<String> = listOf("full_app_unlock","premium_annual","premium_levels")){
-        val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
+        val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
         val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(button("×",softAccent,Color.BLACK){dialog.dismiss()}.apply{textSize=26f;minHeight=dp(42);background=shape(softAccent,21)},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END));shell.addView(head,lp(-1,dp(46),0))
         shell.addView(label(if(firstLaunch)"Your introductory discounts are ready." else "Get every level and setting.",14,false,muted,Gravity.CENTER).apply{setPadding(0,dp(4),0,dp(12))})
         shell.addView(label("✓ Unlock Hard, Extreme, and custom cards\n✓ Create your own truths and dares\n✓ Enable all gameplay settings",13,true,ink).apply{setLineSpacing(dp(5).toFloat(),1f);setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(ColorUtils.blendARGB(surface,accent,.10f),18,1)},lp(-1,-2,10))
@@ -843,8 +942,8 @@ class MainActivity : ComponentActivity() {
             val fallback=mutableListOf(Card("truth","What is a small thing that made you smile today?"),Card("dare","Dance with no music for 30 seconds."))
             decks["soft"]=fallback;decks["hot"]=fallback;decks["hard"]=fallback;decks["extreme"]=fallback
         }
-    }    private fun loadState(){themeMode=prefs.getString("theme","system")?:"system";useSystemColors=prefs.getBoolean("systemColors",false);limitTruths=prefs.getBoolean("limit",true);truthLimit=prefs.getInt("truthLimit",2).coerceIn(1,5);reverseDares=prefs.getBoolean("reverseDares",false);reverseDareLimit=prefs.getInt("reverseDareLimit",2).coerceIn(1,5);premium=hasValidCachedPremiumEntitlement();ttsEnabled=prefs.getBoolean("ttsEnabled",false);val json=prefs.getString("players","[]")?:"[]";try{val a=org.json.JSONArray(json);for(i in 0 until a.length()){val x=a.getJSONObject(i);players.add(Player(x.optString("name"),x.optString("gender","").let{if(it=="Other")"" else it},x.optString("preference",""),x.optInt("truthStreak"),x.optInt("dareStreak"),x.optInt("comfort",5).coerceIn(1,10),x.optBoolean("comfortEnabled",false),MutableList(x.optJSONArray("specific")?.length()?:0){j->x.optJSONArray("specific")?.optString(j)?:""}.filter{it.isNotBlank()}.toMutableSet()))}}catch(_:Exception){};val cards=prefs.getString("cards","[]")?:"[]";try{val a=org.json.JSONArray(cards);for(i in 0 until a.length()){val x=a.getJSONObject(i);customCards.add(Card(x.optString("kind"),x.optString("text")))}}catch(_:Exception){}}
-    private fun saveState(){val a=org.json.JSONArray();players.forEach{p->a.put(JSONObject().put("name",p.name).put("gender",p.gender).put("preference",p.preference).put("truthStreak",p.truthStreak).put("dareStreak",p.dareStreak).put("comfort",p.comfort).put("comfortEnabled",p.comfortEnabled).put("specific",org.json.JSONArray(p.specificPlayers.toList())))};val c=org.json.JSONArray();customCards.forEach{x->c.put(JSONObject().put("kind",x.kind).put("text",x.text))};prefs.edit().putString("theme",themeMode).putBoolean("systemColors",useSystemColors).putBoolean("limit",limitTruths).putInt("truthLimit",truthLimit).putBoolean("reverseDares",reverseDares).putInt("reverseDareLimit",reverseDareLimit).remove("premium").putBoolean("ttsEnabled",ttsEnabled).putString("players",a.toString()).putString("cards",c.toString()).apply()}
+    }    private fun loadState(){themeMode=prefs.getString("theme","dark")?:"dark";useSystemColors=prefs.getBoolean("systemColors",false);selectedLevel=prefs.getString("selectedLevel","soft")?:"soft";limitTruths=prefs.getBoolean("limit",false);truthLimit=prefs.getInt("truthLimit",2).coerceIn(1,5);reverseDares=prefs.getBoolean("reverseDares",false);reverseDareLimit=prefs.getInt("reverseDareLimit",2).coerceIn(1,5);premium=hasValidCachedPremiumEntitlement();lifetimePremium=hasValidCachedLifetimeEntitlement();ttsEnabled=prefs.getBoolean("ttsEnabled",false);val json=prefs.getString("players","[]")?:"[]";try{val a=org.json.JSONArray(json);for(i in 0 until a.length()){val x=a.getJSONObject(i);players.add(Player(x.optString("name"),x.optString("gender","").let{if(it=="Other")"" else it},x.optString("preference",""),x.optInt("truthStreak"),x.optInt("dareStreak"),x.optInt("comfort",5).coerceIn(1,10),x.optBoolean("comfortEnabled",false),MutableList(x.optJSONArray("specific")?.length()?:0){j->x.optJSONArray("specific")?.optString(j)?:""}.filter{it.isNotBlank()}.toMutableSet()))}}catch(_:Exception){};val cards=prefs.getString("cards","[]")?:"[]";try{val a=org.json.JSONArray(cards);for(i in 0 until a.length()){val x=a.getJSONObject(i);customCards.add(Card(x.optString("kind"),x.optString("text")))}}catch(_:Exception){}}
+    private fun saveState(){val a=org.json.JSONArray();players.forEach{p->a.put(JSONObject().put("name",p.name).put("gender",p.gender).put("preference",p.preference).put("truthStreak",p.truthStreak).put("dareStreak",p.dareStreak).put("comfort",p.comfort).put("comfortEnabled",p.comfortEnabled).put("specific",org.json.JSONArray(p.specificPlayers.toList())))};val c=org.json.JSONArray();customCards.forEach{x->c.put(JSONObject().put("kind",x.kind).put("text",x.text))};prefs.edit().putString("theme",themeMode).putBoolean("systemColors",useSystemColors).putString("selectedLevel",selectedLevel).putBoolean("limit",limitTruths).putInt("truthLimit",truthLimit).putBoolean("reverseDares",reverseDares).putInt("reverseDareLimit",reverseDareLimit).remove("premium").putBoolean("ttsEnabled",ttsEnabled).putString("players",a.toString()).putString("cards",c.toString()).apply()}
     data class Player(var name:String,var gender:String="",var preference:String="",var truthStreak:Int=0,var dareStreak:Int=0,var comfort:Int=5,var comfortEnabled:Boolean=false,var specificPlayers:MutableSet<String> = mutableSetOf())
     data class Card(var kind:String,var text:String,var targetName:String?=null)
 }

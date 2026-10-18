@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.view.*
@@ -135,7 +136,34 @@ class MainActivity : ComponentActivity() {
     private val truthColor = Color.rgb(77,163,255)
     private val dareColor = Color.rgb(255,200,61)
     private val moveButtonInk = Color.rgb(18,31,44)
+    private val casualLevelColor = Color.rgb(77,163,255)
+    private val flirtyLevelColor = Color.rgb(255,91,147)
+    private val hotLevelColor = Color.rgb(255,122,69)
+    private val naughtyLevelColor = Color.rgb(166,103,255)
     private val softAccent get() = ColorUtils.blendARGB(accent, background, if (isDark()) .22f else .14f)
+
+    private fun levelName(key:String):String = when(key) {
+        "soft" -> "Casual"
+        "hot" -> "Flirty"
+        "hard" -> "Hot"
+        "extreme" -> "Naughty"
+        "mydares" -> "My truths and dares"
+        else -> key.replaceFirstChar { if(it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    }
+    private fun levelDetail(key:String):String = when(key) {
+        "soft" -> "Easy & silly"
+        "hot" -> "Playful & bold"
+        "hard" -> "Confident & intimate"
+        "extreme" -> "Bold & daring"
+        else -> "Your custom cards"
+    }
+    private fun levelColor(key:String):Int = when(key) {
+        "soft" -> casualLevelColor
+        "hot" -> flirtyLevelColor
+        "hard" -> hotLevelColor
+        "extreme" -> naughtyLevelColor
+        else -> accent
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -282,6 +310,9 @@ class MainActivity : ComponentActivity() {
     private fun accentedHeader(prefix:String, value:String):CharSequence = android.text.SpannableString("$prefix$value").apply {
         setSpan(android.text.style.ForegroundColorSpan(accent),prefix.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
+    private fun coloredHeader(prefix:String, value:String, color:Int):CharSequence = android.text.SpannableString("$prefix$value").apply {
+        setSpan(android.text.style.ForegroundColorSpan(color),prefix.length,length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
     private fun collapsibleHeader(title:CharSequence, expanded:Boolean, toggle:()->Unit):FrameLayout = FrameLayout(this).apply {
         addView(label(title,13,true,muted,Gravity.CENTER_VERTICAL),FrameLayout.LayoutParams(-1,dp(36),Gravity.CENTER_VERTICAL).apply { rightMargin=dp(36) })
         val arrow=ImageButton(this@MainActivity).apply {
@@ -303,7 +334,7 @@ class MainActivity : ComponentActivity() {
     private fun showHome() {
         textToSpeech?.stop()
         activeTimer?.cancel()
-        val play=button("Let's play  →",accent,onAccent(),{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,"Choose gender and interaction preferences for every player before playing.",Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f; minHeight=dp(66); isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
+        val play=button("Let's play  →",accent,moveButtonInk,{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,"Choose gender and interaction preferences for every player before playing.",Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f; minHeight=dp(66); background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,130,55),Color.rgb(255,78,132))).apply { cornerRadius=dp(33).toFloat() }; isEnabled=players.size>=2; alpha=if(players.size>=2)1f else .5f }
         val input=EditText(this).apply { hint="Player name"; textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
         val add=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); editPlayer(players.lastIndex,true) } },lp(dp(120),dp(52),0))
@@ -348,20 +379,26 @@ class MainActivity : ComponentActivity() {
 
         divider(root,15)
         val levels=card(root,0).apply { setPadding(dp(16),dp(12),dp(16),dp(12)) }; (levels.layoutParams as LinearLayout.LayoutParams).setMargins(dp(16),0,dp(16),0)
-        val selectedLevelTitle=when(selectedLevel){"soft"->"SOFT 😎";"hot"->"HOT 😍";"hard"->"HARD 😉";"extreme"->"EXTREME 😈";"mydares"->"MY TRUTHS AND DARES ✏️";else->selectedLevel.uppercase()}
-        levels.addView(collapsibleHeader(accentedHeader("LEVEL SELECTED: ",selectedLevelTitle),levelsPanelExpanded){levelsPanelExpanded=!levelsPanelExpanded;showHome()})
+        val selectedLevelTitle=levelName(selectedLevel).uppercase()
+        levels.addView(collapsibleHeader(coloredHeader("LEVEL SELECTED: ",selectedLevelTitle,levelColor(selectedLevel)),levelsPanelExpanded){levelsPanelExpanded=!levelsPanelExpanded;showHome()})
         if(levelsPanelExpanded) {
         val grid=GridLayout(this).apply { columnCount=2; useDefaultMargins=false }
         val lockedFill=ColorUtils.blendARGB(surface,outline,.55f)
-        fun levelCell(key:String, title:String, detail:String, locked:Boolean) {
+        fun levelCell(key:String, locked:Boolean) {
             val unavailable=locked&&!premium
             val selected=selectedLevel==key&&!unavailable
-            val cell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER; background=shape(if(selected)accent else if(unavailable)lockedFill else surface,22,1); isClickable=true;setOnClickListener { if(unavailable)showPremium() else {selectedLevel=key;saveState();showHome()} } }
-            cell.addView(label(title,13,true,if(selected)onAccent() else if(unavailable)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
-            cell.addView(label(detail,11,false,if(selected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
-            val gp=GridLayout.LayoutParams().apply { width=0;height=dp(66);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(grid.childCount%2==0)0 else dp(4);val right=if(grid.childCount%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) };grid.addView(cell,gp)
+            val tone=levelColor(key)
+            val fill=if(unavailable)lockedFill else if(selected)ColorUtils.blendARGB(surface,tone,if(isDark()).16f else .10f) else surface
+            val cell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER; background=shape(fill,18,if(selected)2 else 1,if(unavailable)outline else tone); isClickable=true;setOnClickListener { if(unavailable)showPremium() else {selectedLevel=key;saveState();showHome()} } }
+            val headline=LinearLayout(this).apply { gravity=Gravity.CENTER }
+            headline.addView(LevelFaceView(key,tone),lp(dp(25),dp(25),0).apply { rightMargin=dp(7) })
+            headline.addView(label(levelName(key),13,true,if(unavailable)muted else tone,Gravity.CENTER).apply { textSize=13.65f })
+            if(selected) headline.addView(label("✓",12,true,tone,Gravity.CENTER).apply { setPadding(dp(7),0,0,0) })
+            cell.addView(headline,lp(-2,dp(28),0))
+            cell.addView(label(if(unavailable)"Premium  🔒" else levelDetail(key),11,false,muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(1),0,0) })
+            val gp=GridLayout.LayoutParams().apply { width=0;height=dp(72);columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f); val left=if(grid.childCount%2==0)0 else dp(4);val right=if(grid.childCount%2==0)dp(4) else 0;setMargins(left,dp(2),right,dp(2)) };grid.addView(cell,gp)
         }
-        levelCell("soft","Soft 😎","Easy & silly",false);levelCell("hot","Hot 😍","Flirty & bold",false);levelCell("hard","Hard 😉",if(premium)"Confident & intimate" else "Premium  🔒",true);levelCell("extreme","Extreme 😈",if(premium)"Bold & daring" else "Premium  🔒",true)
+        levelCell("soft",false);levelCell("hot",false);levelCell("hard",true);levelCell("extreme",true)
         val customLocked=!premium
         val customSelected=selectedLevel=="mydares"
         val custom=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; isClickable=true; background=shape(if(customSelected)accent else if(customLocked)lockedFill else surface,22,1); setOnClickListener { if(customLocked)showPremium() else {selectedLevel="mydares";saveState();openScreen("custom"){showCustomCards()}} } }
@@ -369,7 +406,7 @@ class MainActivity : ComponentActivity() {
         custom.addView(label(if(customLocked)"Premium  🔒" else "Your custom cards",11,false,if(customSelected)ColorUtils.setAlphaComponent(onAccent(),255) else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
         grid.addView(custom,GridLayout.LayoutParams().apply{width=-1;height=dp(66);columnSpec=GridLayout.spec(0,2);setMargins(0,dp(2),0,dp(2))});levels.addView(grid)
         }
-        if(!premium && levelsPanelExpanded) root.addView(label("Hard, Extreme and My truths and dares unlock with a one-time Play purchase.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
+        if(!premium && levelsPanelExpanded) root.addView(label("Hot, Naughty and My truths and dares unlock with Premium.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
     private fun editPlayer(index:Int, isNew:Boolean=false) {
         val player=players[index]; val dialog=Dialog(this); var committed=!isNew
@@ -408,9 +445,9 @@ class MainActivity : ComponentActivity() {
             "gameplay"->Color.rgb(66,196,255)
             else->Color.rgb(255,141,207)
         }
-        val iconRes=when(icon){ "appearance"->R.drawable.ic_wallpaper; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
-        val iconHolder=FrameLayout(this).apply { background=shape(iconBackground,24) }
-        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
+        val iconRes=when(icon){ "appearance"->R.drawable.ic_appearance_palette; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
+        val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,217,190) else iconBackground,24); clipToOutline=true }
+        iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=if(icon=="appearance")ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER; if(icon!="appearance")setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(if(icon=="appearance")dp(60) else dp(25),if(icon=="appearance")dp(60) else dp(25),Gravity.CENTER))
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
@@ -502,9 +539,9 @@ class MainActivity : ComponentActivity() {
 
 • On each turn, choose Truth or Dare. You may choose another prompt before completing the turn.
 
-• Choose a level: Soft for easy and silly prompts, or Hot for flirty and bold prompts.
+• Choose a level: Casual for easy and silly prompts, or Flirty for playful and bold prompts.
 
-• PREMIUM — Hard and Extreme add more confident, intimate, bold, and daring prompts.
+• PREMIUM — Hot adds confident and intimate prompts. Naughty adds the boldest and most daring prompts.
 
 • PREMIUM — My truths and dares lets you create, edit, delete, import, export, and play your own custom cards.
 
@@ -908,7 +945,7 @@ If this policy changes, the current text will be provided in the app and on its 
         val dialog=Dialog(this); premiumDialog=dialog; dialog.setOnDismissListener { if(premiumDialog===dialog) premiumDialog=null }; val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll); val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); setPadding(dp(16),dp(18),dp(16),dp(18)) }; scroll.addView(shell)
         val head=FrameLayout(this); head.addView(label(if(firstLaunch)"Welcome offer" else "Unlock Premium",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER)); head.addView(button("×",softAccent,Color.BLACK){dialog.dismiss()}.apply{textSize=26f;minHeight=dp(42);background=shape(softAccent,21)},FrameLayout.LayoutParams(dp(42),dp(42),Gravity.END));shell.addView(head,lp(-1,dp(46),0))
         shell.addView(label(if(firstLaunch)"Your introductory discounts are ready." else "Get every level and setting.",14,false,muted,Gravity.CENTER).apply{setPadding(0,dp(4),0,dp(12))})
-        shell.addView(label("✓ Unlock Hard, Extreme, and custom cards\n✓ Create your own truths and dares\n✓ Enable all gameplay settings",13,true,ink).apply{setLineSpacing(dp(5).toFloat(),1f);setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(ColorUtils.blendARGB(surface,accent,.10f),18,1)},lp(-1,-2,10))
+        shell.addView(label("✓ Unlock Hot, Naughty, and custom cards\n✓ Create your own truths and dares\n✓ Enable all gameplay settings",13,true,ink).apply{setLineSpacing(dp(5).toFloat(),1f);setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(ColorUtils.blendARGB(surface,accent,.10f),18,1)},lp(-1,-2,10))
         var selected=if("premium_annual" in planIds) "premium_annual" else planIds.first(); val rows=mutableListOf<TextView>()
         fun refresh(){ rows.forEach { row -> val active=row.tag==selected; row.setTextColor(if(active)onAccent() else ink); row.background=shape(if(active)accent else surface,18,if(active)0 else 1) } }
         fun plan(id:String,title:String,detail:String){ val row=label("$title\n${prices[id] ?: "Price shown by Google Play"} · $detail",15,true,ink,Gravity.CENTER_VERTICAL).apply { tag=id; setPadding(dp(16),0,dp(16),0); isClickable=true; setOnClickListener{selected=id;refresh()} }; rows.add(row);shell.addView(row,lp(-1,dp(62),4));refresh() }
@@ -944,6 +981,49 @@ If this policy changes, the current text will be provided in the app and on its 
         }
     }    private fun loadState(){themeMode=prefs.getString("theme","dark")?:"dark";useSystemColors=prefs.getBoolean("systemColors",false);selectedLevel=prefs.getString("selectedLevel","soft")?:"soft";limitTruths=prefs.getBoolean("limit",false);truthLimit=prefs.getInt("truthLimit",2).coerceIn(1,5);reverseDares=prefs.getBoolean("reverseDares",false);reverseDareLimit=prefs.getInt("reverseDareLimit",2).coerceIn(1,5);premium=hasValidCachedPremiumEntitlement();lifetimePremium=hasValidCachedLifetimeEntitlement();ttsEnabled=prefs.getBoolean("ttsEnabled",false);val json=prefs.getString("players","[]")?:"[]";try{val a=org.json.JSONArray(json);for(i in 0 until a.length()){val x=a.getJSONObject(i);players.add(Player(x.optString("name"),x.optString("gender","").let{if(it=="Other")"" else it},x.optString("preference",""),x.optInt("truthStreak"),x.optInt("dareStreak"),x.optInt("comfort",5).coerceIn(1,10),x.optBoolean("comfortEnabled",false),MutableList(x.optJSONArray("specific")?.length()?:0){j->x.optJSONArray("specific")?.optString(j)?:""}.filter{it.isNotBlank()}.toMutableSet()))}}catch(_:Exception){};val cards=prefs.getString("cards","[]")?:"[]";try{val a=org.json.JSONArray(cards);for(i in 0 until a.length()){val x=a.getJSONObject(i);customCards.add(Card(x.optString("kind"),x.optString("text")))}}catch(_:Exception){}}
     private fun saveState(){val a=org.json.JSONArray();players.forEach{p->a.put(JSONObject().put("name",p.name).put("gender",p.gender).put("preference",p.preference).put("truthStreak",p.truthStreak).put("dareStreak",p.dareStreak).put("comfort",p.comfort).put("comfortEnabled",p.comfortEnabled).put("specific",org.json.JSONArray(p.specificPlayers.toList())))};val c=org.json.JSONArray();customCards.forEach{x->c.put(JSONObject().put("kind",x.kind).put("text",x.text))};prefs.edit().putString("theme",themeMode).putBoolean("systemColors",useSystemColors).putString("selectedLevel",selectedLevel).putBoolean("limit",limitTruths).putInt("truthLimit",truthLimit).putBoolean("reverseDares",reverseDares).putInt("reverseDareLimit",reverseDareLimit).remove("premium").putBoolean("ttsEnabled",ttsEnabled).putString("players",a.toString()).putString("cards",c.toString()).apply()}
+
+    private inner class LevelFaceView(private val style:String, private val tone:Int):View(this@MainActivity) {
+        private val line=Paint(Paint.ANTI_ALIAS_FLAG).apply { style=Paint.Style.STROKE; strokeCap=Paint.Cap.ROUND; strokeJoin=Paint.Join.ROUND }
+        private val fill=Paint(Paint.ANTI_ALIAS_FLAG).apply { style=Paint.Style.FILL }
+        override fun onDraw(canvas:Canvas) {
+            super.onDraw(canvas)
+            val s=min(width,height).toFloat()
+            val cx=width/2f
+            val cy=height/2f
+            line.color=tone
+            line.strokeWidth=max(2f,s*.075f)
+            fill.color=tone
+            val r=s*.39f
+            canvas.drawCircle(cx,cy,r,line)
+            fun smile(left:Float,top:Float,right:Float,bottom:Float,start:Float=18f,sweep:Float=144f){canvas.drawArc(RectF(left,top,right,bottom),start,sweep,false,line)}
+            fun heart(x:Float,y:Float,size:Float){
+                val p=Path();p.moveTo(x,y+size*.85f);p.cubicTo(x-size*1.05f,y+size*.20f,x-size*.72f,y-size*.72f,x,y-size*.12f);p.cubicTo(x+size*.72f,y-size*.72f,x+size*1.05f,y+size*.20f,x,y+size*.85f);p.close();canvas.drawPath(p,fill)
+            }
+            when(style) {
+                "soft" -> {
+                    val lens=RectF(cx-r*.70f,cy-r*.35f,cx-r*.08f,cy+r*.08f);canvas.drawRoundRect(lens,s*.06f,s*.06f,line)
+                    val lens2=RectF(cx+r*.08f,cy-r*.35f,cx+r*.70f,cy+r*.08f);canvas.drawRoundRect(lens2,s*.06f,s*.06f,line)
+                    canvas.drawLine(cx-r*.08f,cy-r*.14f,cx+r*.08f,cy-r*.14f,line)
+                    smile(cx-r*.54f,cy-r*.10f,cx+r*.54f,cy+r*.70f)
+                }
+                "hot" -> {
+                    heart(cx-r*.38f,cy-r*.19f,r*.20f);heart(cx+r*.38f,cy-r*.19f,r*.20f)
+                    smile(cx-r*.58f,cy-r*.04f,cx+r*.58f,cy+r*.70f)
+                }
+                "hard" -> {
+                    canvas.drawArc(RectF(cx-r*.68f,cy-r*.40f,cx-r*.10f,cy+r*.05f),205f,125f,false,line)
+                    canvas.drawArc(RectF(cx+r*.10f,cy-r*.40f,cx+r*.68f,cy+r*.05f),210f,120f,false,line)
+                    canvas.drawArc(RectF(cx-r*.50f,cy+r*.02f,cx+r*.58f,cy+r*.62f),18f,122f,false,line)
+                }
+                else -> {
+                    val horns=Path();horns.moveTo(cx-r*.78f,cy-r*.55f);horns.lineTo(cx-r*.58f,cy-r*1.00f);horns.lineTo(cx-r*.28f,cy-r*.72f);horns.moveTo(cx+r*.78f,cy-r*.55f);horns.lineTo(cx+r*.58f,cy-r*1.00f);horns.lineTo(cx+r*.28f,cy-r*.72f);canvas.drawPath(horns,line)
+                    canvas.drawArc(RectF(cx-r*.68f,cy-r*.35f,cx-r*.10f,cy+r*.08f),205f,125f,false,line)
+                    canvas.drawArc(RectF(cx+r*.10f,cy-r*.35f,cx+r*.68f,cy+r*.08f),210f,120f,false,line)
+                    smile(cx-r*.55f,cy-r*.02f,cx+r*.55f,cy+r*.70f)
+                }
+            }
+        }
+    }
     data class Player(var name:String,var gender:String="",var preference:String="",var truthStreak:Int=0,var dareStreak:Int=0,var comfort:Int=5,var comfortEnabled:Boolean=false,var specificPlayers:MutableSet<String> = mutableSetOf())
     data class Card(var kind:String,var text:String,var targetName:String?=null)
 }

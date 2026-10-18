@@ -114,13 +114,14 @@ class MainActivity : ComponentActivity() {
     @Deprecated("Handled for legacy Back navigation")
     override fun onBackPressed() { goBack() }
 
-    private fun dynamicColor(light: Int, dark: Int, fallback: Int): Int = if (useSystemColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) getColor(if (isDark()) dark else light) else fallback
-    private val background get() = dynamicColor(android.R.color.system_neutral1_10, android.R.color.system_neutral1_900, if (isDark()) Color.rgb(23,19,38) else Color.rgb(250,247,255))
-    private val surface get() = dynamicColor(android.R.color.system_neutral1_0, android.R.color.system_neutral1_800, if (isDark()) Color.rgb(34,28,49) else if (isDark()) Color.rgb(34,28,49) else Color.WHITE)
-    private val ink get() = dynamicColor(android.R.color.system_neutral1_900, android.R.color.system_neutral1_10, if (isDark()) Color.rgb(255,249,239) else Color.rgb(35,27,51))
-    private val muted get() = dynamicColor(android.R.color.system_neutral2_700, android.R.color.system_neutral2_300, if (isDark()) Color.rgb(211,204,226) else Color.rgb(99,88,120))
-    private val outline get() = dynamicColor(android.R.color.system_neutral2_300, android.R.color.system_neutral2_600, if (isDark()) Color.rgb(61,54,79) else Color.rgb(220,212,233))
-    private val accent get() = dynamicColor(android.R.color.system_accent1_600, android.R.color.system_accent1_300, if (isDark()) Color.rgb(255,128,160) else Color.rgb(224,79,120))
+    // Brand palette sampled from the supplied app icon. Light mode reverses the
+    // dominant navy and orange while retaining warm, high-contrast surfaces.
+    private val background get() = if (isDark()) Color.rgb(32,44,56) else Color.rgb(255,154,24)
+    private val surface get() = if (isDark()) Color.rgb(41,56,70) else Color.rgb(255,244,230)
+    private val ink get() = if (isDark()) Color.rgb(255,248,238) else Color.rgb(23,37,50)
+    private val muted get() = if (isDark()) Color.rgb(195,203,211) else Color.rgb(74,89,102)
+    private val outline get() = if (isDark()) Color.rgb(70,88,106) else Color.rgb(201,102,0)
+    private val accent get() = if (isDark()) Color.rgb(255,146,13) else Color.rgb(32,44,56)
     private val softAccent get() = ColorUtils.blendARGB(accent, background, if (isDark()) .22f else .14f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -156,8 +157,8 @@ class MainActivity : ComponentActivity() {
     private fun dp(v: Int) = (v * resources.displayMetrics.density + .5f).toInt()
     private fun lp(w: Int = -1, h: Int = -2, m: Int = 0) = LinearLayout.LayoutParams(w, h).apply { setMargins(dp(m), dp(m), dp(m), dp(m)) }
     private fun weight(weight: Float) = LinearLayout.LayoutParams(0, -2, weight)
-    private fun onAccent(): Int = if (ColorUtils.calculateLuminance(accent) > .55) Color.rgb(35,27,51) else if (isDark()) Color.rgb(34,28,49) else Color.WHITE
-    private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .45) Color.rgb(35,27,51) else Color.WHITE
+    private fun onAccent(): Int = if (isDark()) Color.rgb(23,37,50) else Color.WHITE
+    private fun contrastOn(color:Int): Int = if (ColorUtils.calculateLuminance(color) > .36) Color.rgb(23,37,50) else Color.WHITE
     private fun shape(color: Int, radius: Int = 24, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat(); if (stroke > 0) setStroke(dp(stroke), strokeColor) }
     private fun groupedShape(color: Int, topRadius: Int, bottomRadius: Int, stroke: Int = 0, strokeColor: Int = outline) = GradientDrawable().apply {
         setColor(color)
@@ -262,11 +263,10 @@ class MainActivity : ComponentActivity() {
         val root=base(dock=play,dockFollowsIme=false,hideScrollBar=true)
         val brand=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL; orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(10),dp(10),dp(10)); background=shape(surface,30,1) }
         val mark=ImageView(this).apply {
-            setImageResource(R.drawable.ic_brand_mark)
-            scaleType=ImageView.ScaleType.CENTER_CROP
+            setImageResource(R.drawable.ic_brand_mark_orange)
+            scaleType=ImageView.ScaleType.FIT_CENTER
             contentDescription="Truth or Dare"
-            outlineProvider=object:android.view.ViewOutlineProvider(){override fun getOutline(view:View,outline:android.graphics.Outline){outline.setRoundRect(0,0,view.width,view.height,dp(8).toFloat())}}
-            clipToOutline=true
+            if(!isDark()) setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN)
         }
         brand.addView(mark,lp(dp(36),dp(36),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER_VERTICAL; setPadding(dp(10),0,0,0) }
@@ -346,8 +346,8 @@ class MainActivity : ComponentActivity() {
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
         val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
         root.addView(c,LinearLayout.LayoutParams(-1,dp(68)).apply { bottomMargin=dp(verticalMargin) })
-        val iconBackground=when(icon){ "appearance"->Color.rgb(54,31,99); "gameplay"->Color.rgb(20,62,92); "about"->Color.rgb(89,18,70); else->accent }
-        val iconForeground=when(icon){ "appearance"->Color.rgb(190,164,255); "gameplay"->Color.rgb(66,196,255); "about"->Color.rgb(255,141,207); else->onAccent() }
+        val iconBackground=softAccent
+        val iconForeground=accent
         val iconRes=when(icon){ "appearance"->R.drawable.ic_wallpaper; "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
         val iconHolder=FrameLayout(this).apply { background=shape(iconBackground,24) }
         iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN); contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
@@ -379,12 +379,6 @@ class MainActivity : ComponentActivity() {
         themeOption("dark","Dark",R.drawable.ic_theme_dark)
         themeOption("light","Light",R.drawable.ic_theme_light)
         root.addView(picker,lp(-1,-2,16)); mainMargin(picker)
-        val c=card(root,10).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }; mainMargin(c)
-        val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
-        copy.addView(label("Use Android system colors",16,true))
-        copy.addView(label("Match the app to your device palette.",12,false,muted))
-        c.addView(copy,weight(1f))
-        c.addView(expressiveToggle(useSystemColors){ on->useSystemColors=on;saveState();showAppearance() },lp(dp(64),dp(40),0))
     }    private fun showGameplay(){
         val root=base(); title(root,"Gameplay"); val locked=!premium
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }

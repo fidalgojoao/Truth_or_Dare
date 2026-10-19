@@ -119,6 +119,7 @@ class MainActivity : ComponentActivity() {
             "appearance" -> showAppearance()
             "language" -> showLanguage()
             "gameplay" -> showGameplay()
+            "help" -> showHelp()
             "about" -> showAbout()
             "rules" -> showGameRules()
             "privacy" -> showPrivacyPolicy()
@@ -567,6 +568,7 @@ class MainActivity : ComponentActivity() {
         settingsRow(group,"language","Language",languageDisplayName(chosenLanguage),{openScreen("language"){showLanguage()}},28,3,3)
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},3,3,3)
         settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},3,3,3)
+        settingsRow(group,"help","Help","Support tickets, feature requests",{openScreen("help"){showHelp()}},3,3,3)
         settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},3,28,3)
     }    private fun settingsRow(root:LinearLayout,icon:String,name:String,desc:String,action:()->Unit,topRadius:Int=24,bottomRadius:Int=24,verticalMargin:Int=0,showArrow:Boolean=true){
         val c=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; minimumHeight=dp(68); background=groupedShape(surface,topRadius,bottomRadius,1); setPadding(dp(18),dp(8),dp(18),dp(8)); isClickable=true; setOnClickListener{action()} }
@@ -575,25 +577,58 @@ class MainActivity : ComponentActivity() {
             "appearance"->Color.rgb(54,31,99)
             "gameplay"->Color.rgb(20,62,92)
             "language"->Color.rgb(20,78,70)
+            "help"->Color.rgb(88,101,242)
             else->Color.rgb(89,18,70)
         }
         val iconForeground=when(icon){
             "appearance"->Color.rgb(190,164,255)
             "gameplay"->Color.rgb(66,196,255)
             "language"->Color.rgb(52,229,176)
+            "help"->Color.WHITE
             else->Color.rgb(255,141,207)
         }
         val iconHolder=FrameLayout(this).apply { background=shape(if(icon=="appearance")Color.rgb(255,220,196) else iconBackground,24); clipToOutline=true }
         if(icon=="appearance") iconHolder.addView(PaletteIconView().apply{contentDescription=name},FrameLayout.LayoutParams(dp(31),dp(31),Gravity.CENTER))
         else if(icon=="language") iconHolder.addView(label("文",19,true,iconForeground,Gravity.CENTER).apply{contentDescription=name},FrameLayout.LayoutParams(dp(30),dp(30),Gravity.CENTER))
         else {
-            val iconRes=when(icon){ "gameplay"->R.drawable.ic_gameplay; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
+            val iconRes=when(icon){ "gameplay"->R.drawable.ic_gameplay; "help"->R.drawable.ic_discord; "about"->R.drawable.ic_info; else->R.drawable.ic_info }
             iconHolder.addView(ImageView(this).apply { setImageResource(iconRes); scaleType=ImageView.ScaleType.FIT_CENTER;setColorFilter(iconForeground,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription=name },FrameLayout.LayoutParams(dp(25),dp(25),Gravity.CENTER))
         }
         c.addView(iconHolder,lp(dp(48),dp(48),0))
         val copy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(14),0,0,0) }
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
         if(showArrow) c.addView(label("›",28,false,muted,Gravity.CENTER),lp(dp(28),dp(48),0))
+    }
+    private val discordInviteDisplay="discord.gg/Fm2dqKv25m"
+    private val discordInviteUrl="https://$discordInviteDisplay"
+    private fun showHelp(){
+        val root=base();title(root,"Help");divider(root,16)
+        val discordBlue=Color.rgb(88,101,242)
+        val discordPurple=Color.rgb(124,58,237)
+        val banner=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(22),dp(22),dp(22),dp(22))
+            background=GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(discordBlue,discordPurple)).apply{cornerRadius=dp(28).toFloat()}
+            isClickable=true
+            setOnClickListener{openDiscordInvite()}
+        }
+        val heading=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
+        val logo=FrameLayout(this).apply{background=shape(Color.WHITE,22);clipToOutline=true}
+        logo.addView(ImageView(this).apply{setImageResource(R.drawable.ic_discord);setColorFilter(discordBlue,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription="Discord"},FrameLayout.LayoutParams(dp(34),dp(34),Gravity.CENTER))
+        heading.addView(logo,lp(dp(56),dp(56),0))
+        val headingCopy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),0,0,0)}
+        headingCopy.addView(label("Join our Discord",20,true,Color.WHITE))
+        headingCopy.addView(label("SUPPORT • IDEAS • COMMUNITY",10,true,Color.argb(220,255,255,255)).apply{letterSpacing=.08f})
+        heading.addView(headingCopy,weight(1f));banner.addView(heading)
+        banner.addView(label("Need help or have an idea?",17,true,Color.WHITE).apply{setPadding(0,dp(22),0,dp(8))})
+        banner.addView(label("To open a support ticket or submit a feature request, please join our Discord server.",14,false,Color.argb(235,255,255,255)).apply{setLineSpacing(dp(3).toFloat(),1f)})
+        banner.addView(label(discordInviteDisplay,13,true,Color.WHITE).apply{setPadding(0,dp(14),0,dp(14))})
+        banner.addView(button("Join Discord  →",Color.WHITE,discordBlue){openDiscordInvite()}.apply{background=shape(Color.WHITE,20);textSize=15f},lp(-1,dp(54),0))
+        root.addView(banner,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+    }
+    private fun openDiscordInvite(){
+        val browserIntent=Intent(Intent.ACTION_VIEW,Uri.parse(discordInviteUrl)).apply{addCategory(Intent.CATEGORY_BROWSABLE)}
+        runCatching{startActivity(browserIntent)}
     }
     private fun showLanguage(){
         val root=base();title(root,"Language")

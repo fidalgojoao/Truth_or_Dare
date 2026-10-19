@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
         "hot" -> "Flirty"
         "hard" -> "Hot"
         "extreme" -> "Naughty"
-        "mydares" -> "My truths and dares"
+        "mydares" -> "My custom cards"
         else -> key.replaceFirstChar { if(it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     }
     private fun levelDetail(key:String):String = when(key) {
@@ -536,11 +536,11 @@ class MainActivity : ComponentActivity() {
         val customLocked=!premium
         val customSelected=selectedLevel=="mydares"
         val custom=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; isClickable=true; background=if(customSelected)accentOutline(26) else shape(if(customLocked)lockedFill else surface,26,1); setOnClickListener { if(customLocked)showPremium() else {selectedLevel="mydares";saveState();openScreen("custom"){showCustomCards()}} } }
-        custom.addView(label("My truths and dares ✏️",13,true,if(customSelected)accent else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
+        custom.addView(label("My custom cards ✏️",13,true,if(customSelected)accent else if(customLocked)muted else ink,Gravity.CENTER).apply { textSize=13.65f })
         custom.addView(label(if(customLocked)"Premium  🔒" else "Your custom cards",11,false,if(customSelected)accent else muted,Gravity.CENTER).apply { textSize=11.55f; setPadding(0,dp(2),0,0) })
         grid.addView(custom,GridLayout.LayoutParams().apply{width=-1;height=dp(53);columnSpec=GridLayout.spec(0,2);setMargins(0,dp(2),0,dp(2))});levels.addView(grid)
         }
-        if(!premium && levelsPanelExpanded) root.addView(label("Hot, Naughty and My truths and dares unlock with Premium.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
+        if(!premium && levelsPanelExpanded) root.addView(label("Hot, Naughty and My custom cards unlock with Premium.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
     private fun editPlayer(index:Int, isNew:Boolean=false) {
         val player=players[index]; val dialog=Dialog(this); var committed=!isNew
@@ -617,12 +617,12 @@ class MainActivity : ComponentActivity() {
         logo.addView(ImageView(this).apply{setImageResource(R.drawable.ic_discord);setColorFilter(discordBlue,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription="Discord"},FrameLayout.LayoutParams(dp(34),dp(34),Gravity.CENTER))
         heading.addView(logo,lp(dp(56),dp(56),0))
         val headingCopy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),0,0,0)}
-        headingCopy.addView(label("Join our Discord",20,true,Color.WHITE))
+        headingCopy.addView(label("Join my Discord",20,true,Color.WHITE))
         headingCopy.addView(label("SUPPORT • IDEAS • COMMUNITY",10,true,Color.argb(220,255,255,255)).apply{letterSpacing=.08f})
         heading.addView(headingCopy,weight(1f));banner.addView(heading)
         banner.addView(label("Need help or have an idea?",17,true,Color.WHITE).apply{setPadding(0,dp(22),0,dp(8))})
-        banner.addView(label("To open a support ticket or submit a feature request, please join our Discord server.",14,false,Color.argb(235,255,255,255)).apply{setLineSpacing(dp(3).toFloat(),1f)})
-        banner.addView(label(discordInviteDisplay,13,true,Color.WHITE).apply{setPadding(0,dp(14),0,dp(14))})
+        banner.addView(label("To open a support ticket or submit a feature request, please join my Discord server.",14,false,Color.argb(235,255,255,255)).apply{setLineSpacing(dp(3).toFloat(),1f)})
+        banner.addView(label(discordInviteDisplay,13,true,Color.WHITE,Gravity.CENTER).apply{setPadding(0,dp(14),0,dp(14))},lp(-1,-2,0))
         banner.addView(button("Join Discord  →",Color.WHITE,discordBlue){openDiscordInvite()}.apply{background=shape(Color.WHITE,20);textSize=15f},lp(-1,dp(54),0))
         root.addView(banner,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
     }
@@ -881,7 +881,9 @@ If this policy changes, the current text will be provided in the app and on its 
         root.addView(label("Spinning the bottle…",17,true,accent,Gravity.CENTER),lp(-1,dp(48),0))
         val step=360f/players.size
         val targetRotation=4*360f-step/2f-chosen*step
-        ValueAnimator.ofFloat(0f,targetRotation).apply { duration=4000; interpolator=DecelerateInterpolator(); addUpdateListener { wheel.wheelRotation=it.animatedValue as Float; wheel.invalidate() }; doOnEnd { turn=chosen; hasActiveTurn=true; if(reverseDarePending){reverseDarePending=false;currentScreen="card";showCard(nextCard("dare"))}else{currentScreen="choices";showChoices()} }; start() }
+        val spinnerTone=runCatching{android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC,36)}.getOrNull()
+        var lastSoundStep=-1
+        ValueAnimator.ofFloat(0f,targetRotation).apply { duration=4000; interpolator=DecelerateInterpolator(); addUpdateListener { wheel.wheelRotation=it.animatedValue as Float; wheel.invalidate();val soundStep=(wheel.wheelRotation/24f).toInt();if(soundStep!=lastSoundStep){lastSoundStep=soundStep;spinnerTone?.startTone(android.media.ToneGenerator.TONE_PROP_BEEP,28)} }; doOnEnd { spinnerTone?.release();turn=chosen; hasActiveTurn=true; if(reverseDarePending){reverseDarePending=false;currentScreen="card";showCard(nextCard("dare"))}else{currentScreen="choices";showChoices()} }; start() }
     }
     private fun ValueAnimator.doOnEnd(action:()->Unit) { addListener(object:android.animation.AnimatorListenerAdapter(){ override fun onAnimationEnd(animation:android.animation.Animator){ action() } }) }
     private fun showChoices(){

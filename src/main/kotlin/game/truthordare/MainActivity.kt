@@ -80,8 +80,16 @@ class MainActivity : ComponentActivity() {
     private lateinit var billingClient: BillingClient
     private val prices = mutableMapOf<String, String>()
     private val products = mutableMapOf<String, ProductDetails>()
-    private val supportedLanguages=listOf("en","es","fr","de","pt","it","ru","ja","ko","zh-CN","zh-TW","ar","hi","id","tr","vi","th","pl","nl","uk","bn","fa","sv","ro","cs","el","hu","he","da","fi","no","ms","fil","ur","sw","ta","te","mr","gu","kn","ml","pa","sr","hr","sk","bg","lt","sl","et","lv")
+    private val knownLanguages=listOf("en","es","fr","de","pt","it","ru","ja","ko","zh-CN","zh-TW","ar","hi","id","tr","vi","th","pl","nl","uk","bn","fa","sv","ro","cs","el","hu","he","da","fi","no","ms","fil","ur","sw","ta","te","mr","gu","kn","ml","pa","sr","hr","sk","bg","lt","sl","et","lv")
     private val uiTranslations by lazy { runCatching { JSONObject(assets.open("ui_translations.json").bufferedReader().use{it.readText()}) }.getOrDefault(JSONObject()) }
+    private val promptAssetPrefix="truth_or_dare_prompts_"
+    private val supportedLanguages by lazy {
+        val available=runCatching { assets.list("").orEmpty().toSet() }.getOrDefault(emptySet())
+        knownLanguages.filter { language ->
+            "${promptAssetPrefix}${promptFileSuffix(language)}.json" in available ||
+                "${promptAssetPrefix}${language.lowercase(Locale.ENGLISH)}.json" in available
+        }
+    }
     private val navigationStack = ArrayDeque<String>()
     private var currentScreen = "home"
     private val exportCardsLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let { exportCardsTo(it) } }
@@ -172,14 +180,18 @@ class MainActivity : ComponentActivity() {
         "extreme" -> naughtyLevelColor
         else -> accent
     }
+    private fun selectedLanguage():String {
+        val selected=prefs.getString("uiLanguage","en") ?: "en"
+        return if(selected=="system" || selected in supportedLanguages)selected else "en"
+    }
     private fun effectiveLanguage():String {
-        val chosen=prefs.getString("uiLanguage","en") ?: "en"
-        if(chosen!="system" && chosen in supportedLanguages)return chosen
+        val chosen=selectedLanguage()
+        if(chosen!="system")return chosen
         val locale=if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.N)resources.configuration.locales[0] else @Suppress("DEPRECATION") resources.configuration.locale
         val tag=locale.toLanguageTag()
         return when {
-            locale.language=="zh" && (tag.contains("Hant",true) || locale.country in setOf("TW","HK","MO"))->"zh-TW"
-            locale.language=="zh"->"zh-CN"
+            locale.language=="zh" && "zh-TW" in supportedLanguages && (tag.contains("Hant",true) || locale.country in setOf("TW","HK","MO"))->"zh-TW"
+            locale.language=="zh" && "zh-CN" in supportedLanguages->"zh-CN"
             locale.language in supportedLanguages->locale.language
             else->"en"
         }
@@ -464,7 +476,7 @@ class MainActivity : ComponentActivity() {
         val mark=ImageView(this).apply {
             setImageResource(R.drawable.ic_brand_mark_orange)
             scaleType=ImageView.ScaleType.FIT_CENTER
-            contentDescription="Truth or Dare"
+            contentDescription=tr("Truth or Dare")
             if(useSystemColors || !isDark()) setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN)
         }
         brand.addView(mark,lp(dp(36),dp(36),0))
@@ -551,7 +563,7 @@ class MainActivity : ComponentActivity() {
         divider(root,16)
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
-        val chosenLanguage=prefs.getString("uiLanguage","en") ?: "en"
+        val chosenLanguage=selectedLanguage()
         settingsRow(group,"language","Language",languageDisplayName(chosenLanguage),{openScreen("language"){showLanguage()}},28,3,3)
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},3,3,3)
         settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},3,3,3)
@@ -585,7 +597,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun showLanguage(){
         val root=base();title(root,"Language")
-        val selected=prefs.getString("uiLanguage","en") ?: "en"
+        val selected=selectedLanguage()
         val languages=listOf("system")+supportedLanguages
         val group=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         root.addView(group,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16);topMargin=dp(16)})

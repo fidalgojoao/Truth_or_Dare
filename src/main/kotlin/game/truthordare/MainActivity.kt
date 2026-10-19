@@ -423,7 +423,8 @@ class MainActivity : ComponentActivity() {
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val keyboard=insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                 val bottom=max(bars.bottom,keyboard)
-                sv.setPadding(bars.left, bars.top + dp(4), bars.right, bottom + dockHeight + dp(16))
+                val contentBottom=if(dockFollowsIme)bottom else bars.bottom
+                sv.setPadding(bars.left, bars.top + dp(4), bars.right, contentBottom + dockHeight + dp(16))
                 (dock.layoutParams as FrameLayout.LayoutParams).apply { bottomMargin = (if(dockFollowsIme) bottom else bars.bottom) + dp(8); dock.layoutParams = this }
                 insets
             }
@@ -622,7 +623,7 @@ class MainActivity : ComponentActivity() {
         heading.addView(headingCopy,weight(1f));banner.addView(heading)
         banner.addView(label("Need help or have an idea?",17,true,Color.WHITE).apply{setPadding(0,dp(22),0,dp(8))})
         banner.addView(label("To open a support ticket or submit a feature request, please join my Discord server.",14,false,Color.argb(235,255,255,255)).apply{setLineSpacing(dp(3).toFloat(),1f)})
-        banner.addView(label(discordInviteDisplay,13,true,Color.WHITE,Gravity.CENTER).apply{setPadding(0,dp(14),0,dp(14))},lp(-1,-2,0))
+        banner.addView(label(discordInviteDisplay,13,true,Color.WHITE,Gravity.START).apply{setPadding(0,dp(22),0,dp(14))},lp(-1,-2,0))
         banner.addView(button("Join Discord  →",Color.WHITE,discordBlue){openDiscordInvite()}.apply{background=shape(Color.WHITE,20);textSize=15f},lp(-1,dp(54),0))
         root.addView(banner,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
     }
@@ -881,9 +882,8 @@ If this policy changes, the current text will be provided in the app and on its 
         root.addView(label("Spinning the bottle…",17,true,accent,Gravity.CENTER),lp(-1,dp(48),0))
         val step=360f/players.size
         val targetRotation=4*360f-step/2f-chosen*step
-        val spinnerTone=runCatching{android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC,36)}.getOrNull()
-        var lastSoundStep=-1
-        ValueAnimator.ofFloat(0f,targetRotation).apply { duration=4000; interpolator=DecelerateInterpolator(); addUpdateListener { wheel.wheelRotation=it.animatedValue as Float; wheel.invalidate();val soundStep=(wheel.wheelRotation/24f).toInt();if(soundStep!=lastSoundStep){lastSoundStep=soundStep;spinnerTone?.startTone(android.media.ToneGenerator.TONE_PROP_BEEP,28)} }; doOnEnd { spinnerTone?.release();turn=chosen; hasActiveTurn=true; if(reverseDarePending){reverseDarePending=false;currentScreen="card";showCard(nextCard("dare"))}else{currentScreen="choices";showChoices()} }; start() }
+        val spinSound=android.media.MediaPlayer.create(this,R.raw.wheel_spin)?.apply{isLooping=false;seekTo(0);start()}
+        ValueAnimator.ofFloat(0f,targetRotation).apply { duration=4000; interpolator=DecelerateInterpolator(); addUpdateListener { wheel.wheelRotation=it.animatedValue as Float; wheel.invalidate() }; doOnEnd { spinSound?.runCatching{if(isPlaying)stop()};spinSound?.release();turn=chosen; hasActiveTurn=true; if(reverseDarePending){reverseDarePending=false;currentScreen="card";showCard(nextCard("dare"))}else{currentScreen="choices";showChoices()} }; start() }
     }
     private fun ValueAnimator.doOnEnd(action:()->Unit) { addListener(object:android.animation.AnimatorListenerAdapter(){ override fun onAnimationEnd(animation:android.animation.Animator){ action() } }) }
     private fun showChoices(){

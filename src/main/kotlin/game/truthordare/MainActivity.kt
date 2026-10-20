@@ -752,17 +752,16 @@ class MainActivity : ComponentActivity() {
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
-    private data class GameRule(val title:String,val detail:String,val highlighted:Boolean=false,val optional:Boolean=false)
+    private data class GameRule(val title:String,val detail:String,val highlighted:Boolean=false,val premium:Boolean=false)
     private fun ruleText(english:String,spanish:String):String = if(effectiveLanguage()=="es")spanish else english
     private fun gameRuleItems():List<GameRule> = listOf(
         GameRule(ruleText("Play safely and respect every player","Juega de forma segura y respeta a todos"),ruleText("Participation is always voluntary. Anyone may skip a prompt, change their mind, or stop playing. Stop immediately if someone feels uncomfortable.","Participar siempre es voluntario. Cualquiera puede saltarse una carta, cambiar de opinión o dejar de jugar. Detente inmediatamente si alguien se siente incómodo."),highlighted=true),
         GameRule(ruleText("1. Add players","1. Añade jugadores"),ruleText("Add at least two players to the game.","Añade al menos dos jugadores a la partida.")),
-        GameRule(ruleText("2. Edit their preferences","2. Edita sus preferencias"),ruleText("Set each player's gender, interaction preferences, specific players, and comfort zone.","Configura el género, las preferencias de interacción, los jugadores específicos y la zona de confort de cada persona.")),
+        GameRule(ruleText("2. Edit their preferences","2. Edita sus preferencias"),ruleText("Set each player's gender, interaction preferences, and specific players.","Configura el género, las preferencias de interacción y los jugadores específicos de cada persona.")),
         GameRule(ruleText("3. Choose the game level","3. Elige el nivel de juego"),ruleText("Choose Casual, Flirty, Hot, Naughty, or your custom cards.","Elige Casual, Coqueto, Caliente, Travieso o tus cartas personalizadas.")),
         GameRule(ruleText("4. Start the game","4. Empieza la partida"),ruleText("Tap Let's play. The wheel chooses a player, who then selects Truth or Dare.","Pulsa Juguemos. La ruleta elige a una persona, que después selecciona Verdad o Reto.")),
-        GameRule(ruleText("My custom cards","Mis cartas personalizadas"),ruleText("Create, edit, import, export, and play your own cards.","Crea, edita, importa, exporta y juega con tus propias cartas."),optional=true),
-        GameRule(ruleText("Gameplay settings","Ajustes de juego"),ruleText("Optionally limit consecutive truths or enable Reverse Dare.","Puedes limitar las verdades consecutivas o activar Reto inverso."),optional=true),
-        GameRule(ruleText("Prompt narration","Lectura de cartas"),ruleText("Use the speaker button to read the displayed prompt aloud.","Usa el botón del altavoz para leer la carta mostrada en voz alta."),optional=true)
+        GameRule(ruleText("My custom cards","Mis cartas personalizadas"),ruleText("Create, edit, import, export, and play your own cards.","Crea, edita, importa, exporta y juega con tus propias cartas."),premium=true),
+        GameRule(ruleText("Gameplay settings","Ajustes de juego"),ruleText("Use comfort-zone calibration, limit consecutive truths, or enable Reverse Dare.","Usa la calibración de la zona de confort, limita las verdades consecutivas o activa Reto inverso."),premium=true)
     )
     private fun gameRulesPanel():LinearLayout = LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL
@@ -770,8 +769,9 @@ class MainActivity : ComponentActivity() {
             val card=LinearLayout(this@MainActivity).apply {
                 orientation=LinearLayout.VERTICAL
                 setPadding(dp(14),dp(12),dp(14),dp(12))
-                background=if(rule.highlighted) shape(ColorUtils.blendARGB(surface,accent,if(isDark()).18f else .10f),18,2,accent) else shape(surface,18,1)
-                addView(label(if(rule.optional)"${ruleText("OPTIONAL","OPCIONAL")} · ${rule.title}" else rule.title,14,true,if(rule.highlighted)accent else ink))
+                val safetyGreen=Color.rgb(52,229,176)
+                background=if(rule.highlighted) shape(ColorUtils.blendARGB(surface,safetyGreen,if(isDark()).18f else .10f),18,2,safetyGreen) else shape(surface,18,1)
+                addView(label(if(rule.premium)"PREMIUM · ${rule.title}" else rule.title,14,true,if(rule.highlighted)safetyGreen else if(rule.premium)accent else ink))
                 addView(label(rule.detail,12,false,muted).apply{setPadding(0,dp(5),0,0);setLineSpacing(dp(2).toFloat(),1f)})
             }
             addView(card,lp(-1,-2,if(index==gameRuleItems().lastIndex)0 else 7))
@@ -779,18 +779,18 @@ class MainActivity : ComponentActivity() {
     }
     private fun showGameRules(){
         val root=base();title(root,"Game rules");divider(root,12)
-        root.addView(label(ruleText("Follow these steps to start, then explore the optional features whenever you want.","Sigue estos pasos para empezar y explora las funciones opcionales cuando quieras."),14,false,muted).apply{setPadding(0,0,0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        root.addView(label(ruleText("Follow these steps to start, then explore Premium features whenever you want.","Sigue estos pasos para empezar y explora las funciones Premium cuando quieras."),14,false,muted).apply{setPadding(0,0,0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         root.addView(gameRulesPanel(),lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
     }
     private fun continueAfterFirstRun(){ if(!prefs.getBoolean("premiumWelcomeSeen",false)){offerAfterPrivacy=true;window.decorView.post{requestFirstOffer()}} }
     private fun showGameRulesNotice(){
         val dialog=Dialog(this)
-        val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);clipToOutline=true;setPadding(dp(18),dp(18),dp(18),dp(18))}
+        val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);clipToOutline=true;setPadding(dp(16),dp(18),dp(16),dp(18))}
         shell.addView(label("Game rules",22,true))
         shell.addView(label(ruleText("A quick guide before your first game.","Una guía rápida antes de tu primera partida."),13,false,muted).apply{setPadding(0,dp(6),0,dp(10))})
         val scroll=ScrollView(this).apply{setPadding(0,0,dp(2),0)};styleScrollBar(scroll)
-        scroll.addView(gameRulesPanel().apply{setPadding(0,0,dp(16),dp(8))})
-        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply{rightMargin=dp(-16)})
+        scroll.addView(gameRulesPanel().apply{setPadding(0,0,0,dp(8))})
+        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         shell.addView(button(ruleText("Start playing","Empezar a jugar"),accent,onAccent()){prefs.edit().putBoolean("gameRulesSeen",true).apply();dialog.dismiss();continueAfterFirstRun()},lp(-1,dp(54),0))
         dialog.setContentView(shell);dialog.setCancelable(false);dialog.show()
         dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));val dialogHeight=((resources.displayMetrics.heightPixels*.76f).toInt()+dp(40)).coerceAtMost(resources.displayMetrics.heightPixels-dp(32));setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),dialogHeight);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.42f;if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)blurBehindRadius=dp(22)};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)}

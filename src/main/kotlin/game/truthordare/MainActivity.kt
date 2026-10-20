@@ -228,6 +228,7 @@ class MainActivity : ComponentActivity() {
         applyThemeAndHome()
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.TIRAMISU) onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT) { runOnUiThread { goBack() } }
         if(!prefs.getBoolean("privacySeen",false)) window.decorView.post { showPrivacyNotice() }
+        else if(!prefs.getBoolean("gameRulesSeen",false)) window.decorView.post { showGameRulesNotice() }
         else if(!prefs.getBoolean("premiumWelcomeSeen",false)) { offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } }
     }
 
@@ -600,7 +601,7 @@ class MainActivity : ComponentActivity() {
         copy.addView(label(name,16,true)); copy.addView(label(desc,12,false,muted)); c.addView(copy,weight(1f))
         if(showArrow) c.addView(label("›",28,false,muted,Gravity.CENTER),lp(dp(28),dp(48),0))
     }
-    private val discordInviteDisplay="discord.gg/Fm2dqKv25m"
+    private val discordInviteDisplay="discord.gg/EJ7ThCgw4g"
     private val discordInviteUrl="https://$discordInviteDisplay"
     private fun showHelp(){
         val root=base();title(root,"Help");divider(root,16)
@@ -751,32 +752,49 @@ class MainActivity : ComponentActivity() {
         c.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply { topMargin=dp(10) })
     }
-    private fun showGameRules(){ informationPage("Game rules",trKey("__game_rules_body",gameRulesText())) }
-    private fun gameRulesText():String = """
-• Add at least two players. Each player chooses a gender and who they want to interact with: Men, Women, Men & women, or selected Specific players.
-
-• The spinner chooses turns fairly. The same player cannot be selected twice in a row. With four or more players, everyone is selected before anyone repeats.
-
-• On each turn, choose Truth or Dare. You may choose another prompt before completing the turn.
-
-• Choose a level: Casual for easy and silly prompts, or Flirty for playful and bold prompts.
-
-• PREMIUM — Hot adds confident and intimate prompts. Naughty adds the boldest and most daring prompts.
-
-• PREMIUM — My truths and dares lets you create, edit, delete, import, export, and play your own custom cards.
-
-• PREMIUM — Comfort-zone calibration sets a 1–10 intensity limit for each player. A targeted prompt respects the lower enabled comfort setting of everyone involved.
-
-• PREMIUM — Limit consecutive truths can require a Dare after the selected number of Truth choices.
-
-• PREMIUM — Reverse Dare can let a player assign a dare to another randomly selected player after the configured number of consecutive dares.
-
-• Targeted prompts follow the active player's interaction preference and never deliberately choose an excluded player.
-
-• The speaker button can read the displayed prompt aloud through the device's configured text-to-speech engine.
-
-• Keep every action voluntary. Anyone may skip a prompt. Stop immediately when someone is uncomfortable, and keep play consensual and free from harm.
-""".trimIndent()
+    private data class GameRule(val title:String,val detail:String,val highlighted:Boolean=false,val optional:Boolean=false)
+    private fun ruleText(english:String,spanish:String):String = if(effectiveLanguage()=="es")spanish else english
+    private fun gameRuleItems():List<GameRule> = listOf(
+        GameRule(ruleText("Play safely and respect every player","Juega de forma segura y respeta a todos"),ruleText("Participation is always voluntary. Anyone may skip a prompt, change their mind, or stop playing. Stop immediately if someone feels uncomfortable.","Participar siempre es voluntario. Cualquiera puede saltarse una carta, cambiar de opinión o dejar de jugar. Detente inmediatamente si alguien se siente incómodo."),highlighted=true),
+        GameRule(ruleText("1. Add players","1. Añade jugadores"),ruleText("Add at least two players to the game.","Añade al menos dos jugadores a la partida.")),
+        GameRule(ruleText("2. Edit their preferences","2. Edita sus preferencias"),ruleText("Set each player's gender, interaction preferences, specific players, and comfort zone.","Configura el género, las preferencias de interacción, los jugadores específicos y la zona de confort de cada persona.")),
+        GameRule(ruleText("3. Choose the game level","3. Elige el nivel de juego"),ruleText("Choose Casual, Flirty, Hot, Naughty, or your custom cards.","Elige Casual, Coqueto, Caliente, Travieso o tus cartas personalizadas.")),
+        GameRule(ruleText("4. Start the game","4. Empieza la partida"),ruleText("Tap Let's play. The wheel chooses a player, who then selects Truth or Dare.","Pulsa Juguemos. La ruleta elige a una persona, que después selecciona Verdad o Reto.")),
+        GameRule(ruleText("My custom cards","Mis cartas personalizadas"),ruleText("Create, edit, import, export, and play your own cards.","Crea, edita, importa, exporta y juega con tus propias cartas."),optional=true),
+        GameRule(ruleText("Gameplay settings","Ajustes de juego"),ruleText("Optionally limit consecutive truths or enable Reverse Dare.","Puedes limitar las verdades consecutivas o activar Reto inverso."),optional=true),
+        GameRule(ruleText("Prompt narration","Lectura de cartas"),ruleText("Use the speaker button to read the displayed prompt aloud.","Usa el botón del altavoz para leer la carta mostrada en voz alta."),optional=true)
+    )
+    private fun gameRulesPanel():LinearLayout = LinearLayout(this).apply {
+        orientation=LinearLayout.VERTICAL
+        gameRuleItems().forEachIndexed { index,rule ->
+            val card=LinearLayout(this@MainActivity).apply {
+                orientation=LinearLayout.VERTICAL
+                setPadding(dp(14),dp(12),dp(14),dp(12))
+                background=if(rule.highlighted) shape(ColorUtils.blendARGB(surface,accent,if(isDark()).18f else .10f),18,2,accent) else shape(surface,18,1)
+                addView(label(if(rule.optional)"${ruleText("OPTIONAL","OPCIONAL")} · ${rule.title}" else rule.title,14,true,if(rule.highlighted)accent else ink))
+                addView(label(rule.detail,12,false,muted).apply{setPadding(0,dp(5),0,0);setLineSpacing(dp(2).toFloat(),1f)})
+            }
+            addView(card,lp(-1,-2,if(index==gameRuleItems().lastIndex)0 else 7))
+        }
+    }
+    private fun showGameRules(){
+        val root=base();title(root,"Game rules");divider(root,12)
+        root.addView(label(ruleText("Follow these steps to start, then explore the optional features whenever you want.","Sigue estos pasos para empezar y explora las funciones opcionales cuando quieras."),14,false,muted).apply{setPadding(0,0,0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        root.addView(gameRulesPanel(),lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+    }
+    private fun continueAfterFirstRun(){ if(!prefs.getBoolean("premiumWelcomeSeen",false)){offerAfterPrivacy=true;window.decorView.post{requestFirstOffer()}} }
+    private fun showGameRulesNotice(){
+        val dialog=Dialog(this)
+        val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);clipToOutline=true;setPadding(dp(18),dp(18),dp(18),dp(18))}
+        shell.addView(label("Game rules",22,true))
+        shell.addView(label(ruleText("A quick guide before your first game.","Una guía rápida antes de tu primera partida."),13,false,muted).apply{setPadding(0,dp(6),0,dp(10))})
+        val scroll=ScrollView(this).apply{setPadding(0,0,dp(2),0)};styleScrollBar(scroll)
+        scroll.addView(gameRulesPanel().apply{setPadding(0,0,dp(16),dp(8))})
+        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply{rightMargin=dp(-16)})
+        shell.addView(button(ruleText("Start playing","Empezar a jugar"),accent,onAccent()){prefs.edit().putBoolean("gameRulesSeen",true).apply();dialog.dismiss();continueAfterFirstRun()},lp(-1,dp(54),0))
+        dialog.setContentView(shell);dialog.setCancelable(false);dialog.show()
+        dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));val dialogHeight=((resources.displayMetrics.heightPixels*.76f).toInt()+dp(40)).coerceAtMost(resources.displayMetrics.heightPixels-dp(32));setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),dialogHeight);setGravity(Gravity.CENTER);attributes=attributes.apply{dimAmount=.42f;if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)blurBehindRadius=dp(22)};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S)addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)}
+    }
     private fun privacyText():String = """
 Truth or Dare is a local party game. It does not require an account and does not operate an advertising, analytics, or remote gameplay server.
 
@@ -808,10 +826,11 @@ If this policy changes, the current text will be provided in the app and on its 
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); clipToOutline=true; setPadding(dp(18),dp(18),dp(18),dp(18)) }
         shell.addView(label("Privacy policy",22,true))
         shell.addView(label("Before you start, please read how Truth or Dare handles your data.",13,false,muted).apply { setPadding(0,dp(6),0,dp(8)) })
+        shell.addView(label(ruleText("You can revisit the privacy policy in Settings > General Information.","Puedes volver a consultar la política de privacidad en Ajustes > Información general."),12,true,accent).apply{setPadding(0,0,0,dp(10))})
         val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll)
         scroll.addView(label(linkedInformationText(trKey("__privacy_policy_body",privacyText())),13,false,ink).apply { movementMethod=android.text.method.LinkMovementMethod.getInstance();highlightColor=Color.TRANSPARENT;setLineSpacing(dp(5).toFloat(),1f);setPadding(0,0,dp(18),dp(8)) })
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply { rightMargin=dp(-16) })
-        shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); if(!prefs.getBoolean("premiumWelcomeSeen",false)){ offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } } },lp(-1,dp(54),0))
+        shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); if(!prefs.getBoolean("gameRulesSeen",false))window.decorView.post{showGameRulesNotice()}else continueAfterFirstRun() },lp(-1,dp(54),0))
         dialog.setContentView(shell); dialog.setCancelable(false); dialog.show()
         dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); val dialogHeight=((resources.displayMetrics.heightPixels*.76f).toInt()+dp(40)).coerceAtMost(resources.displayMetrics.heightPixels-dp(32)); setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),dialogHeight); setGravity(Gravity.CENTER); attributes=attributes.apply { dimAmount=.42f; if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) blurBehindRadius=dp(22) }; addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND); if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND) }
     }    private fun eligibleTargets(active:Player):List<Player>{

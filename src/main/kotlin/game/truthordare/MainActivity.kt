@@ -774,7 +774,7 @@ class MainActivity : ComponentActivity() {
                 addView(label(if(rule.premium)"PREMIUM · ${rule.title}" else rule.title,14,true,if(rule.highlighted)safetyGreen else if(rule.premium)accent else ink))
                 addView(label(rule.detail,12,false,muted).apply{setPadding(0,dp(5),0,0);setLineSpacing(dp(2).toFloat(),1f)})
             }
-            addView(card,lp(-1,-2,if(index==gameRuleItems().lastIndex)0 else 7))
+            addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=if(index==gameRuleItems().lastIndex)0 else dp(7)})
         }
     }
     private fun showGameRules(){
@@ -788,7 +788,7 @@ class MainActivity : ComponentActivity() {
         val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);clipToOutline=true;setPadding(dp(16),dp(18),dp(16),dp(18))}
         shell.addView(label("Game rules",22,true))
         shell.addView(label(ruleText("A quick guide before your first game.","Una guía rápida antes de tu primera partida."),13,false,muted).apply{setPadding(0,dp(6),0,dp(10))})
-        val scroll=ScrollView(this).apply{setPadding(0,0,dp(2),0)};styleScrollBar(scroll)
+        val scroll=ScrollView(this).apply{isVerticalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER}
         scroll.addView(gameRulesPanel().apply{setPadding(0,0,0,dp(8))})
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         shell.addView(button(ruleText("Start playing","Empezar a jugar"),accent,onAccent()){prefs.edit().putBoolean("gameRulesSeen",true).apply();dialog.dismiss();continueAfterFirstRun()},lp(-1,dp(54),0))

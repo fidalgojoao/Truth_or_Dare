@@ -68,6 +68,9 @@ class MainActivity : ComponentActivity() {
     private var restorePendingAfterConnection = false
     private var round = 1
     private var turn = 0
+    private var playMode = "spin"
+    private val orderedTurnIndices = mutableListOf<Int>()
+    private var orderedTurnPosition = 0
     private val remainingTurnIndices = mutableSetOf<Int>()
     private var hasActiveTurn = false
     private var activeTimer: CountDownTimer? = null
@@ -124,6 +127,8 @@ class MainActivity : ComponentActivity() {
             "rules" -> showGameRules()
             "privacy" -> showPrivacyPolicy()
             "appInfo" -> showAppInformation()
+            "playMode" -> showPlayModeSelection()
+            "turnOrder" -> showTurnOrderSetup()
             "choices" -> showChoices()
             "spinner" -> showHome()
             "card" -> currentCard?.let { showCard(it) } ?: showChoices()
@@ -470,7 +475,7 @@ class MainActivity : ComponentActivity() {
     private fun showHome() {
         textToSpeech?.stop()
         activeTimer?.cancel()
-        val play=button("Let's play  →",accent,moveButtonInk,{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,tr("Choose gender and interaction preferences for every player before playing."),Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); openScreen("spinner"){showPlayerSpinner()} } }).apply { textSize=20f;setTextColor(moveButtonInk);minHeight=dp(66);background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,130,55),Color.rgb(255,78,132))).apply { cornerRadius=dp(33).toFloat() };isEnabled=players.size>=2;alpha=if(players.size>=2)1f else .5f }
+        val play=button("Let's play  →",accent,moveButtonInk,{ if(players.size>=2){ val incomplete=players.indexOfFirst{it.gender.isBlank() || it.preference.isBlank()}; if(incomplete>=0){ Toast.makeText(this,tr("Choose gender and interaction preferences for every player before playing."),Toast.LENGTH_LONG).show(); editPlayer(incomplete); return@button }; round=1; hasActiveTurn=false; remainingTurnIndices.clear(); orderedTurnPosition=0; openScreen("playMode"){showPlayModeSelection()} } }).apply { textSize=20f;setTextColor(moveButtonInk);minHeight=dp(66);background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,130,55),Color.rgb(255,78,132))).apply { cornerRadius=dp(33).toFloat() };isEnabled=players.size>=2;alpha=if(players.size>=2)1f else .5f }
         val input=EditText(this).apply { hint=tr("Player name"); textSize=17f; setTextColor(ink); setHintTextColor(muted); setSingleLine(true); minHeight=dp(52); background=shape(this@MainActivity.background,18,1); setPadding(dp(15),0,dp(10),0) }
         val add=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
         add.addView(input,weight(1f)); add.addView(Space(this),lp(dp(10),1,0)); add.addView(button("Add player +",accent,onAccent()){ val name=input.text.toString().trim(); if(name.isNotEmpty()){ players.add(Player(name)); input.text.clear(); editPlayer(players.lastIndex,true) } },lp(dp(120),dp(52),0))
@@ -759,7 +764,7 @@ class MainActivity : ComponentActivity() {
         GameRule(ruleText("1. Add players","1. Añade jugadores"),ruleText("Add at least two players to the game.","Añade al menos dos jugadores a la partida.")),
         GameRule(ruleText("2. Edit their preferences","2. Edita sus preferencias"),ruleText("Set each player's gender, interaction preferences, and specific players.","Configura el género, las preferencias de interacción y los jugadores específicos de cada persona.")),
         GameRule(ruleText("3. Choose the game level","3. Elige el nivel de juego"),ruleText("Choose Casual, Flirty, Hot, Naughty, or your custom cards.","Elige Casual, Coqueto, Caliente, Travieso o tus cartas personalizadas.")),
-        GameRule(ruleText("4. Start the game","4. Empieza la partida"),ruleText("Tap Let's play. The wheel chooses a player, who then selects Truth or Dare.","Pulsa Juguemos. La ruleta elige a una persona, que después selecciona Verdad o Reto.")),
+        GameRule(ruleText("4. Start the game","4. Empieza la partida"),ruleText("Tap Let's play, then choose Spin the Wheel or Taking turns.","Pulsa Juguemos y elige Girar la ruleta o Por turnos.")),
         GameRule(ruleText("My custom cards","Mis cartas personalizadas"),ruleText("Create, edit, import, export, and play your own cards.","Crea, edita, importa, exporta y juega con tus propias cartas."),premium=true),
         GameRule(ruleText("Gameplay settings","Ajustes de juego"),ruleText("Use comfort-zone calibration, limit consecutive truths, or enable Reverse Dare.","Usa la calibración de la zona de confort, limita las verdades consecutivas o activa Reto inverso."),premium=true)
     )
@@ -883,6 +888,49 @@ If this policy changes, the current text will be provided in the app and on its 
             paint.color=accent; paint.style=Paint.Style.STROKE; paint.strokeWidth=dp(5).toFloat(); canvas.drawLine(cx,cy-radius-dp(8),cx,cy-radius+dp(12),paint); paint.style=Paint.Style.FILL
         }
     }
+    private fun resetOrderedTurnIndices(){
+        if(orderedTurnIndices.size!=players.size || orderedTurnIndices.toSet()!=players.indices.toSet()){
+            orderedTurnIndices.clear();orderedTurnIndices.addAll(players.indices)
+        }
+    }
+    private fun showPlayModeSelection(){
+        val root=base();title(root,ruleText("Choose how to play","Elige cómo jugar"));divider(root,14)
+        root.addView(label(ruleText("How should players take turns?","¿Cómo deben turnarse los jugadores?"),15,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        fun option(symbol:String,name:String,description:String,action:()->Unit){
+            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;background=shape(surface,24,1);setPadding(dp(16),dp(16),dp(16),dp(16));isClickable=true;setOnClickListener{action()}}
+            row.addView(label(symbol,25,true,accent,Gravity.CENTER),lp(dp(52),dp(52),0).apply{rightMargin=dp(12)})
+            val copy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;addView(label(name,17,true));addView(label(description,12,false,muted).apply{setPadding(0,dp(4),0,0);setLineSpacing(dp(2).toFloat(),1f)})}
+            row.addView(copy,weight(1f));row.addView(label("›",26,true,accent,Gravity.CENTER),lp(dp(30),dp(52),0))
+            root.addView(row,lp(-1,-2,6).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        }
+        option("◉",ruleText("Spin the Wheel","Girar la ruleta"),ruleText("Randomly choose each player with the animated wheel.","Elige a cada jugador al azar con la ruleta animada.")){playMode="spin";currentScreen="spinner";showPlayerSpinner()}
+        option("↕",ruleText("Taking turns","Por turnos"),ruleText("Set a player order and repeat it throughout the game.","Establece un orden de jugadores y repítelo durante la partida.")){playMode="ordered";resetOrderedTurnIndices();openScreen("turnOrder"){showTurnOrderSetup()}}
+    }
+    private fun showTurnOrderSetup(){
+        resetOrderedTurnIndices()
+        val start=button(ruleText("Start game  →","Empezar partida  →"),accent,onAccent()){
+            if(orderedTurnIndices.isEmpty())return@button
+            playMode="ordered";orderedTurnPosition=0;turn=orderedTurnIndices.first();round=1;hasActiveTurn=true;currentScreen="choices";showChoices()
+        }.apply{textSize=17f}
+        val root=base(dock=start);title(root,ruleText("Taking turns","Por turnos"));divider(root,12)
+        root.addView(label(ruleText("Arrange the players in the order you want. The order repeats after the last player.","Ordena a los jugadores como quieras. El orden se repite después del último jugador."),14,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10));setLineSpacing(dp(2).toFloat(),1f)},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        orderedTurnIndices.forEachIndexed{position,playerIndex->
+            val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(surface,20,1);setPadding(dp(12),dp(10),dp(10),dp(10))}
+            row.addView(label("${position+1}",15,true,accent,Gravity.CENTER).apply{background=accentOutline(21)},lp(dp(42),dp(42),0).apply{rightMargin=dp(12)})
+            row.addView(label(players[playerIndex].name,16,true),weight(1f))
+            fun moveButton(symbol:String,enabled:Boolean,target:Int):TextView=button(symbol,surface,ink){if(enabled){val moved=orderedTurnIndices.removeAt(position);orderedTurnIndices.add(target,moved);showTurnOrderSetup()}}.apply{isEnabled=enabled;alpha=if(enabled)1f else .32f;textSize=20f;contentDescription=ruleText(if(symbol=="↑")"Move up" else "Move down",if(symbol=="↑")"Subir" else "Bajar")}
+            row.addView(moveButton("↑",position>0,position-1),lp(dp(46),dp(46),0).apply{rightMargin=dp(6)})
+            row.addView(moveButton("↓",position<orderedTurnIndices.lastIndex,position+1),lp(dp(46),dp(46),0))
+            root.addView(row,lp(-1,-2,4).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        }
+    }
+    private fun continueToNextTurn(){
+        if(playMode=="ordered" && orderedTurnIndices.isNotEmpty()){
+            orderedTurnPosition++
+            if(orderedTurnPosition>=orderedTurnIndices.size){orderedTurnPosition=0;round++}
+            turn=orderedTurnIndices[orderedTurnPosition];hasActiveTurn=true;currentScreen="choices";showChoices()
+        }else{currentScreen="spinner";showPlayerSpinner()}
+    }
     private fun showPlayerSpinner(){
         textToSpeech?.stop()
         if(players.size<2){ showHome(); return }
@@ -910,7 +958,7 @@ If this policy changes, the current text will be provided in the app and on its 
         val root=base(scroll=false);val player=players[turn%players.size];val truthAllowed=!(limitTruths&&player.truthStreak>=truthLimit);val reverseReady=premium&&reverseDares&&player.dareStreak>=reverseDareLimit
         val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START));val copy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;addView(label(trf("ROUND {round}","round" to round),10,true,accent,Gravity.CENTER));addView(label(trf("{player}'s turn","player" to player.name),21,true,ink,Gravity.CENTER))};header.addView(copy,FrameLayout.LayoutParams(-1,dp(52),Gravity.CENTER).apply{leftMargin=dp(54);rightMargin=dp(54)});root.addView(header,lp(-1,dp(56),0))
         root.addView(label(if(!truthAllowed)"Truth is locked this turn — choose Dare to continue." else if(reverseReady)"Reverse Dare is ready — spin to assign a dare." else "Choose your move",if(truthAllowed)17 else 14,false,if(truthAllowed)muted else accent,Gravity.CENTER),lp(-1,dp(42),0))
-        val truth=button("✦\n${tr("Truth").uppercase()}\n${tr("Be honest")}",if(truthAllowed)truthColor else ColorUtils.blendARGB(surface,outline,.65f),if(truthAllowed)moveButtonInk else muted){if(truthAllowed)openScreen("card"){showCard(nextCard("truth"))}}.apply{textSize=22f;isEnabled=truthAllowed;alpha=if(truthAllowed)1f else .55f};if(reverseReady)root.addView(button("Reverse Dare · spin for player",accent,onAccent()){reverseDarePending=true;showPlayerSpinner()}.apply{textSize=13f},lp(-1,dp(46),2));root.addView(truth,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(5);bottomMargin=dp(3)})
+        val truth=button("✦\n${tr("Truth").uppercase()}\n${tr("Be honest")}",if(truthAllowed)truthColor else ColorUtils.blendARGB(surface,outline,.65f),if(truthAllowed)moveButtonInk else muted){if(truthAllowed)openScreen("card"){showCard(nextCard("truth"))}}.apply{textSize=22f;isEnabled=truthAllowed;alpha=if(truthAllowed)1f else .55f};if(reverseReady)root.addView(button(if(playMode=="ordered")ruleText("Reverse Dare · assign it yourself","Reto inverso · asígnalo tú") else "Reverse Dare · spin for player",accent,onAccent()){if(playMode=="ordered"){currentScreen="card";showCard(nextCard("dare"))}else{reverseDarePending=true;showPlayerSpinner()}}.apply{textSize=13f},lp(-1,dp(46),2));root.addView(truth,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(5);bottomMargin=dp(3)})
         val dare=button("⚡\n${tr("Dare").uppercase()}\n${tr("Take the challenge")}",dareColor,moveButtonInk){openScreen("card"){showCard(nextCard("dare"))}}.apply{textSize=22f};root.addView(dare,LinearLayout.LayoutParams(-1,0,1f).apply{topMargin=dp(3);bottomMargin=dp(2)})
     }
     private fun comfortAdjustedLevel(active:Player, target:Player?=null):String {
@@ -938,7 +986,7 @@ If this policy changes, the current text will be provided in the app and on its 
         return if(pool.isEmpty()) Card(kind,"No prompt available for the current player preferences.") else pool.random()
     }
     private fun showCard(card:Card){
-        currentCard=card;val player=players[turn%players.size];val doneTone=Color.rgb(52,229,176);val next=button("Done · next turn →",surface,doneTone){if(card.kind=="truth"){player.truthStreak++;player.dareStreak=0}else{player.truthStreak=0;player.dareStreak++};saveState();if(navigationStack.isNotEmpty()&&navigationStack.last()=="choices")navigationStack.removeLast();currentScreen="spinner";showPlayerSpinner()}.apply{background=toneOutline(doneTone);setTextColor(doneTone);textSize=16f;minHeight=dp(72);fitSingleLine(this,10,16)};val choose=!(limitTruths&&player.truthStreak>=truthLimit);val dock=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};if(choose){val again=button("Choose again",accent,onAccent()){activeTimer?.cancel();currentScreen="choices";showChoices()}.apply{textSize=16f;fitSingleLine(this,10,16)};dock.addView(again,LinearLayout.LayoutParams(0,dp(72),.48f).apply{rightMargin=dp(8)});dock.addView(next,LinearLayout.LayoutParams(0,dp(72),.52f))}else dock.addView(next,LinearLayout.LayoutParams(-1,dp(72)))
+        currentCard=card;val player=players[turn%players.size];val doneTone=Color.rgb(52,229,176);val next=button("Done · next turn →",surface,doneTone){if(card.kind=="truth"){player.truthStreak++;player.dareStreak=0}else{player.truthStreak=0;player.dareStreak++};saveState();if(navigationStack.isNotEmpty()&&navigationStack.last()=="choices")navigationStack.removeLast();continueToNextTurn()}.apply{background=toneOutline(doneTone);setTextColor(doneTone);textSize=16f;minHeight=dp(72);fitSingleLine(this,10,16)};val choose=!(limitTruths&&player.truthStreak>=truthLimit);val dock=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};if(choose){val again=button("Choose again",accent,onAccent()){activeTimer?.cancel();currentScreen="choices";showChoices()}.apply{textSize=16f;fitSingleLine(this,10,16)};dock.addView(again,LinearLayout.LayoutParams(0,dp(72),.48f).apply{rightMargin=dp(8)});dock.addView(next,LinearLayout.LayoutParams(0,dp(72),.52f))}else dock.addView(next,LinearLayout.LayoutParams(-1,dp(72)))
         val root=base(scroll=false);val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));header.addView(label(if(card.kind=="truth")"Truth time" else "Dare time",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));val speaker=ImageButton(this).apply{setImageResource(if(ttsEnabled)R.drawable.ic_volume_on else R.drawable.ic_volume_off);setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN);background=accentOutline(23);setPadding(dp(11),dp(11),dp(11),dp(11));contentDescription=if(ttsEnabled)"Mute speech" else "Enable speech";setOnClickListener{if(ttsEnabled)textToSpeech?.stop();animate().rotationBy(180f).setDuration(180).withEndAction{ttsEnabled=!ttsEnabled;saveState();showCard(card)}.start()}};header.addView(speaker,FrameLayout.LayoutParams(dp(46),dp(46),Gravity.END or Gravity.CENTER_VERTICAL));root.addView(header,lp(-1,dp(46),0));val display=renderPrompt(card.text,player,card.targetName);if(ttsEnabled)textToSpeech?.speak(display,TextToSpeech.QUEUE_FLUSH,null,"prompt");val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=shape(surface,30,1);setPadding(dp(18),dp(18),dp(18),dp(18));addView(promptLabel(display))};root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply{setMargins(0,dp(10),0,dp(8))});root.addView(dock,LinearLayout.LayoutParams(-1,dp(72)).apply{setMargins(0,0,0,dp(8))})
     }
     private fun startTimer(seconds:Int,tv:TextView){activeTimer?.cancel();activeTimer=object:CountDownTimer(seconds*1000L,1000){override fun onTick(ms:Long){tv.text="${max(1,ms/1000)} s"};override fun onFinish(){tv.text="Time's up!";android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION,90).startTone(android.media.ToneGenerator.TONE_PROP_BEEP2)}}.start()}

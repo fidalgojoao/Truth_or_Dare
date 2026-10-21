@@ -914,7 +914,7 @@ If this policy changes, the current text will be provided in the app and on its 
             if(orderedTurnIndices.isEmpty())return@button
             playMode="ordered";orderedTurnPosition=0;turn=orderedTurnIndices.first();round=1;hasActiveTurn=true;currentScreen="choices";showChoices()
         }.apply{textSize=17f}
-        val root=base(dock=start);title(root,ruleText("Taking turns","Por turnos"));divider(root,12)
+        val root=base(dock=start).apply{clipChildren=false;clipToPadding=false};(root.parent as? ViewGroup)?.apply{clipChildren=false;clipToPadding=false};title(root,ruleText("Taking turns","Por turnos"));divider(root,12)
         root.addView(label(ruleText("Touch and hold the four-line handle, then drag players into the order you want. The order repeats after the last player.","Mantén pulsado el control de cuatro líneas y arrastra a los jugadores al orden que quieras. El orden se repite después del último jugador."),14,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10));setLineSpacing(dp(2).toFloat(),1f)},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         val holders=mutableListOf<FrameLayout>()
         val rows=mutableListOf<LinearLayout>()

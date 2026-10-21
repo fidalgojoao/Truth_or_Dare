@@ -10,8 +10,8 @@ android {
         applicationId 'game.truthordare'
         minSdk 24
         targetSdk 36
-        versionCode 140
-        versionName '0.5.62'
+        versionCode 139
+        versionName '0.5.61'
     }
     signingConfigs {
         release {
@@ -38,7 +38,4 @@ dependencies {
     implementation 'androidx.activity:activity-ktx:1.10.1'
     implementation 'androidx.core:core-ktx:1.15.0'
     implementation 'androidx.fragment:fragment-ktx:1.8.6'
-    implementation 'com.google.android.gms:play-services-nearby:19.5.1'
-    implementation 'com.google.android.gms:play-services-code-scanner:16.1.0'
-    implementation 'com.google.zxing:core:3.5.4'
 }

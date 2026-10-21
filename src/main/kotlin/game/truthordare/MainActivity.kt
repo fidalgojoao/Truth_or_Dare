@@ -71,6 +71,8 @@ class MainActivity : ComponentActivity() {
     private var playMode = "spin"
     private val orderedTurnIndices = mutableListOf<Int>()
     private var orderedTurnPosition = 0
+    private var orderAnimationFrom = -1
+    private var orderAnimationTo = -1
     private val remainingTurnIndices = mutableSetOf<Int>()
     private var hasActiveTurn = false
     private var activeTimer: CountDownTimer? = null
@@ -908,21 +910,35 @@ If this policy changes, the current text will be provided in the app and on its 
     }
     private fun showTurnOrderSetup(){
         resetOrderedTurnIndices()
+        val animationFrom=orderAnimationFrom;val animationTo=orderAnimationTo
         val start=button(ruleText("Start game  →","Empezar partida  →"),accent,onAccent()){
             if(orderedTurnIndices.isEmpty())return@button
             playMode="ordered";orderedTurnPosition=0;turn=orderedTurnIndices.first();round=1;hasActiveTurn=true;currentScreen="choices";showChoices()
         }.apply{textSize=17f}
         val root=base(dock=start);title(root,ruleText("Taking turns","Por turnos"));divider(root,12)
-        root.addView(label(ruleText("Arrange the players in the order you want. The order repeats after the last player.","Ordena a los jugadores como quieras. El orden se repite después del último jugador."),14,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10));setLineSpacing(dp(2).toFloat(),1f)},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        root.addView(label(ruleText("Touch and hold the four-line handle, then drag players into the order you want. The order repeats after the last player.","Mantén pulsado el control de cuatro líneas y arrastra a los jugadores al orden que quieras. El orden se repite después del último jugador."),14,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10));setLineSpacing(dp(2).toFloat(),1f)},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         orderedTurnIndices.forEachIndexed{position,playerIndex->
             val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(surface,20,1);setPadding(dp(12),dp(10),dp(10),dp(10))}
             row.addView(label("${position+1}",15,true,accent,Gravity.CENTER).apply{background=accentOutline(21)},lp(dp(42),dp(42),0).apply{rightMargin=dp(12)})
             row.addView(label(players[playerIndex].name,16,true),weight(1f))
-            fun moveButton(symbol:String,enabled:Boolean,target:Int):TextView=button(symbol,surface,ink){if(enabled){val moved=orderedTurnIndices.removeAt(position);orderedTurnIndices.add(target,moved);showTurnOrderSetup()}}.apply{isEnabled=enabled;alpha=if(enabled)1f else .32f;textSize=20f;contentDescription=ruleText(if(symbol=="↑")"Move up" else "Move down",if(symbol=="↑")"Subir" else "Bajar")}
-            row.addView(moveButton("↑",position>0,position-1),lp(dp(46),dp(46),0).apply{rightMargin=dp(6)})
-            row.addView(moveButton("↓",position<orderedTurnIndices.lastIndex,position+1),lp(dp(46),dp(46),0))
+            val handle=object:View(this){
+                private val linePaint=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=muted;strokeWidth=dp(3).toFloat();strokeCap=Paint.Cap.ROUND}
+                override fun onDraw(canvas:Canvas){super.onDraw(canvas);val center=height/2f;for(i in 0..3){val y=center+(i-1.5f)*dp(6);canvas.drawLine(dp(11).toFloat(),y,(width-dp(11)).toFloat(),y,linePaint)}}
+            }.apply{contentDescription=ruleText("Touch and hold to reorder","Mantén pulsado para reordenar");isLongClickable=true;setOnLongClickListener{performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);val started=startDragAndDrop(android.content.ClipData.newPlainText("player-order",position.toString()),View.DragShadowBuilder(row),position,0);if(started)row.alpha=.28f;started}}
+            row.addView(handle,lp(dp(52),dp(52),0))
+            row.setOnDragListener{_,event->when(event.action){
+                android.view.DragEvent.ACTION_DRAG_STARTED->event.localState is Int
+                android.view.DragEvent.ACTION_DRAG_ENTERED->{row.background=accentOutline(20);true}
+                android.view.DragEvent.ACTION_DRAG_LOCATION->{val offset=if(event.y>row.height/2f)-dp(8).toFloat() else dp(8).toFloat();row.animate().translationY(offset).setDuration(110).start();true}
+                android.view.DragEvent.ACTION_DRAG_EXITED->{row.animate().translationY(0f).setDuration(110).start();row.background=shape(surface,20,1);true}
+                android.view.DragEvent.ACTION_DROP->{val from=event.localState as? Int;if(from!=null&&from in orderedTurnIndices.indices){var insertion=position+if(event.y>row.height/2f)1 else 0;if(from<insertion)insertion--;val destination=insertion.coerceIn(0,orderedTurnIndices.lastIndex);if(destination!=from){val moved=orderedTurnIndices.removeAt(from);orderedTurnIndices.add(destination,moved);orderAnimationFrom=from;orderAnimationTo=destination;showTurnOrderSetup()}};true}
+                android.view.DragEvent.ACTION_DRAG_ENDED->{row.alpha=1f;row.animate().translationY(0f).setDuration(110).start();row.background=shape(surface,20,1);true}
+                else->true
+            }}
             root.addView(row,lp(-1,-2,4).apply{leftMargin=dp(16);rightMargin=dp(16)})
+            if(animationFrom>=0&&animationTo>=0){val slot=dp(70).toFloat();val offset=when{position==animationTo->(animationFrom-animationTo)*slot;animationFrom<animationTo&&position in animationFrom until animationTo->slot;animationFrom>animationTo&&position in (animationTo+1)..animationFrom->-slot;else->0f};if(offset!=0f){row.translationY=offset;if(position==animationTo){row.alpha=.82f;row.scaleX=1.02f;row.scaleY=1.02f};row.post{row.animate().translationY(0f).alpha(1f).scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(DecelerateInterpolator()).start()}}}
         }
+        orderAnimationFrom=-1;orderAnimationTo=-1
     }
     private fun continueToNextTurn(){
         if(playMode=="ordered" && orderedTurnIndices.isNotEmpty()){

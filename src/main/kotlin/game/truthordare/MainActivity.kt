@@ -252,6 +252,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun isDark(): Boolean = when (themeMode) { "dark" -> true; "light" -> false; else -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES }
+    private fun readableGreen(): Int = if(isDark()) Color.rgb(52,229,176) else Color.rgb(0,122,90)
     private fun dp(v: Int) = (v * resources.displayMetrics.density + .5f).toInt()
     private fun lp(w: Int = -1, h: Int = -2, m: Int = 0) = LinearLayout.LayoutParams(w, h).apply { setMargins(dp(m), dp(m), dp(m), dp(m)) }
     private fun weight(weight: Float) = LinearLayout.LayoutParams(0, -2, weight)
@@ -592,7 +593,7 @@ class MainActivity : ComponentActivity() {
         val iconForeground=when(icon){
             "appearance"->Color.rgb(190,164,255)
             "gameplay"->Color.rgb(66,196,255)
-            "language"->Color.rgb(52,229,176)
+            "language"->readableGreen()
             "help"->Color.WHITE
             else->Color.rgb(255,141,207)
         }
@@ -776,7 +777,7 @@ class MainActivity : ComponentActivity() {
             val card=LinearLayout(this@MainActivity).apply {
                 orientation=LinearLayout.VERTICAL
                 setPadding(dp(14),dp(12),dp(14),dp(12))
-                val safetyGreen=Color.rgb(52,229,176)
+                val safetyGreen=readableGreen()
                 background=if(rule.highlighted) shape(ColorUtils.blendARGB(surface,safetyGreen,if(isDark()).18f else .10f),18,2,safetyGreen) else shape(surface,18,1)
                 addView(label(if(rule.premium)"PREMIUM · ${rule.title}" else rule.title,14,true,if(rule.highlighted)safetyGreen else if(rule.premium)accent else ink))
                 addView(label(rule.detail,12,false,muted).apply{setPadding(0,dp(5),0,0);setLineSpacing(dp(2).toFloat(),1f)})
@@ -1031,7 +1032,7 @@ If this policy changes, the current text will be provided in the app and on its 
         return if(pool.isEmpty()) Card(kind,"No prompt available for the current player preferences.") else pool.random()
     }
     private fun showCard(card:Card){
-        currentCard=card;val player=players[turn%players.size];val doneTone=Color.rgb(52,229,176);val next=button("Done · next turn →",surface,doneTone){if(card.kind=="truth"){player.truthStreak++;player.dareStreak=0}else{player.truthStreak=0;player.dareStreak++};saveState();if(navigationStack.isNotEmpty()&&navigationStack.last()=="choices")navigationStack.removeLast();continueToNextTurn()}.apply{background=toneOutline(doneTone);setTextColor(doneTone);textSize=16f;minHeight=dp(72);fitSingleLine(this,10,16)};val choose=!(limitTruths&&player.truthStreak>=truthLimit);val dock=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};if(choose){val again=button("Choose again",accent,onAccent()){activeTimer?.cancel();currentScreen="choices";showChoices()}.apply{textSize=16f;fitSingleLine(this,10,16)};dock.addView(again,LinearLayout.LayoutParams(0,dp(72),.48f).apply{rightMargin=dp(8)});dock.addView(next,LinearLayout.LayoutParams(0,dp(72),.52f))}else dock.addView(next,LinearLayout.LayoutParams(-1,dp(72)))
+        currentCard=card;val player=players[turn%players.size];val doneTone=readableGreen();val next=button("Done · next turn →",surface,doneTone){if(card.kind=="truth"){player.truthStreak++;player.dareStreak=0}else{player.truthStreak=0;player.dareStreak++};saveState();if(navigationStack.isNotEmpty()&&navigationStack.last()=="choices")navigationStack.removeLast();continueToNextTurn()}.apply{background=toneOutline(doneTone);setTextColor(doneTone);textSize=16f;minHeight=dp(72);fitSingleLine(this,10,16)};val choose=!(limitTruths&&player.truthStreak>=truthLimit);val dock=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL};if(choose){val again=button("Choose again",accent,onAccent()){activeTimer?.cancel();currentScreen="choices";showChoices()}.apply{textSize=16f;fitSingleLine(this,10,16)};dock.addView(again,LinearLayout.LayoutParams(0,dp(72),.48f).apply{rightMargin=dp(8)});dock.addView(next,LinearLayout.LayoutParams(0,dp(72),.52f))}else dock.addView(next,LinearLayout.LayoutParams(-1,dp(72)))
         val root=base(scroll=false);val header=FrameLayout(this);header.addView(backButton{goBack()},FrameLayout.LayoutParams(dp(46),dp(46),Gravity.START or Gravity.CENTER_VERTICAL));header.addView(label(if(card.kind=="truth")"Truth time" else "Dare time",22,true,ink,Gravity.CENTER),FrameLayout.LayoutParams(-1,dp(46),Gravity.CENTER));val speaker=ImageButton(this).apply{setImageResource(if(ttsEnabled)R.drawable.ic_volume_on else R.drawable.ic_volume_off);setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN);background=accentOutline(23);setPadding(dp(11),dp(11),dp(11),dp(11));contentDescription=if(ttsEnabled)"Mute speech" else "Enable speech";setOnClickListener{if(ttsEnabled)textToSpeech?.stop();animate().rotationBy(180f).setDuration(180).withEndAction{ttsEnabled=!ttsEnabled;saveState();showCard(card)}.start()}};header.addView(speaker,FrameLayout.LayoutParams(dp(46),dp(46),Gravity.END or Gravity.CENTER_VERTICAL));root.addView(header,lp(-1,dp(46),0));val display=renderPrompt(card.text,player,card.targetName);if(ttsEnabled)textToSpeech?.speak(display,TextToSpeech.QUEUE_FLUSH,null,"prompt");val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=shape(surface,30,1);setPadding(dp(18),dp(18),dp(18),dp(18));addView(promptLabel(display))};root.addView(c,LinearLayout.LayoutParams(-1,0,1f).apply{setMargins(0,dp(10),0,dp(8))});root.addView(dock,LinearLayout.LayoutParams(-1,dp(72)).apply{setMargins(0,0,0,dp(8))})
     }
     private fun startTimer(seconds:Int,tv:TextView){activeTimer?.cancel();activeTimer=object:CountDownTimer(seconds*1000L,1000){override fun onTick(ms:Long){tv.text="${max(1,ms/1000)} s"};override fun onFinish(){tv.text="Time's up!";android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION,90).startTone(android.media.ToneGenerator.TONE_PROP_BEEP2)}}.start()}
@@ -1256,7 +1257,7 @@ If this policy changes, the current text will be provided in the app and on its 
         showPremium(true)
     }
     private fun premiumSupportBanner():LinearLayout {
-        val green=Color.rgb(52,229,176)
+        val green=readableGreen()
         return LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
             gravity=Gravity.CENTER_VERTICAL

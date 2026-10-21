@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var billingClient: BillingClient
     private val prices = mutableMapOf<String, String>()
     private val products = mutableMapOf<String, ProductDetails>()
-    private val knownLanguages=listOf("en","es","fr","de","pt","it","ru","ja","ko","zh-CN","zh-TW","ar","hi","id","tr","vi","th","pl","nl","uk","bn","fa","sv","ro","cs","el","hu","he","da","fi","no","ms","fil","ur","sw","ta","te","mr","gu","kn","ml","pa","sr","hr","sk","bg","lt","sl","et","lv")
+    private val knownLanguages=listOf("en","es","fr","de","pt-BR","pt","it","ru","ja","ko","zh-CN","zh-TW","ar","hi","id","tr","vi","th","pl","nl","uk","bn","fa","sv","ro","cs","el","hu","he","da","fi","no","ms","fil","ur","sw","ta","te","mr","gu","kn","ml","pa","sr","hr","sk","bg","lt","sl","et","lv")
     private val uiTranslations by lazy { runCatching { JSONObject(assets.open("ui_translations.json").bufferedReader().use{it.readText()}) }.getOrDefault(JSONObject()) }
     private val promptAssetPrefix="truth_or_dare_prompts_"
     private val supportedLanguages by lazy {
@@ -200,6 +200,7 @@ class MainActivity : ComponentActivity() {
         return when {
             locale.language=="zh" && "zh-TW" in supportedLanguages && (tag.contains("Hant",true) || locale.country in setOf("TW","HK","MO"))->"zh-TW"
             locale.language=="zh" && "zh-CN" in supportedLanguages->"zh-CN"
+            locale.language=="pt" && locale.country=="BR" && "pt-BR" in supportedLanguages->"pt-BR"
             locale.language in supportedLanguages->locale.language
             else->"en"
         }
@@ -207,13 +208,19 @@ class MainActivity : ComponentActivity() {
     private fun tr(value:String):String {
         val language=effectiveLanguage()
         if(language=="en")return value
-        return uiTranslations.optJSONObject(language)?.optString(value,value)?.takeIf{it.isNotBlank()} ?: value
+        val translations=uiTranslations.optJSONObject(language) ?: uiTranslations.optJSONObject(language.substringBefore("-"))
+        return translations?.optString(value,value)?.takeIf{it.isNotBlank()} ?: value
     }
-    private fun trKey(key:String,fallback:String):String = uiTranslations.optJSONObject(effectiveLanguage())?.optString(key,fallback)?.takeIf{it.isNotBlank()} ?: fallback
+    private fun trKey(key:String,fallback:String):String {
+        val language=effectiveLanguage()
+        val translations=uiTranslations.optJSONObject(language) ?: uiTranslations.optJSONObject(language.substringBefore("-"))
+        return translations?.optString(key,fallback)?.takeIf{it.isNotBlank()} ?: fallback
+    }
     private fun trf(value:String,vararg replacements:Pair<String,Any>):String = replacements.fold(tr(value)){text,(key,replacement)->text.replace("{$key}",replacement.toString())}
     private fun fitSingleLine(view:TextView,minSp:Int=10,maxSp:Int=15){view.isSingleLine=true;TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(view,minSp,maxSp,1,TypedValue.COMPLEX_UNIT_SP)}
     private fun languageDisplayName(code:String):String {
         if(code=="system")return tr("System default")
+        if(code=="pt-BR")return "Portuguese (Brazil)"
         val locale=Locale.forLanguageTag(code)
         return locale.getDisplayName(locale).replaceFirstChar{if(it.isLowerCase())it.titlecase(locale)else it.toString()}
     }
@@ -1319,6 +1326,7 @@ If this policy changes, the current text will be provided in the app and on its 
     private fun promptFileSuffix(language:String):String = when(language){
         "zh-CN"->"chinese_simplified"
         "zh-TW"->"chinese_traditional"
+        "pt-BR"->"pt_br"
         else->Locale.forLanguageTag(language).getDisplayLanguage(Locale.ENGLISH).lowercase(Locale.ENGLISH).replace(" ","_")
     }
     private fun promptJsonForLanguage():JSONObject {

@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("truth_or_dare", MODE_PRIVATE) }
     private val players = mutableListOf<Player>()
     private val customCards = mutableListOf<Card>()
+    private val sharedSessionCards = mutableListOf<Card>()
     private val decks = mutableMapOf<String, MutableList<Card>>()
     private var selectedLevel = "soft"
     private var useSystemColors = false
@@ -97,8 +98,23 @@ class MainActivity : ComponentActivity() {
     }
     private val navigationStack = ArrayDeque<String>()
     private var currentScreen = "home"
+    private var shareStatus = "Choose whether this phone hosts the game or sends cards to a nearby host."
+    private var hostQrText = ""
+    private var nearbyPermissionAction:(()->Unit)?=null
     private val exportCardsLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let { exportCardsTo(it) } }
     private val importCardsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { importCardsFrom(it) } }
+    private val nearbyPermissionLauncher=registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val action=nearbyPermissionAction;nearbyPermissionAction=null
+        if(requiredNearbyPermissions().all{permission->androidx.core.content.ContextCompat.checkSelfPermission(this,permission)==android.content.pm.PackageManager.PERMISSION_GRANTED})action?.invoke()
+        else Toast.makeText(this,"Nearby device permission is required to share cards.",Toast.LENGTH_LONG).show()
+    }
+    private val cardShareManager by lazy { CardShareManager(this,"$packageName.customcards",packageName,setOf("truth","dare"),object:CardShareManager.Listener{
+        override fun onShareStatus(message:String){shareStatus=message;if(currentScreen=="shareHost")showHostShare()}
+        override fun onHostReady(qrText:String){hostQrText=qrText;if(currentScreen=="shareHost")showHostShare()}
+        override fun onIncomingBatch(batch:IncomingCardBatch){reviewIncomingBatch(batch)}
+        override fun onSendComplete(count:Int){Toast.makeText(this@MainActivity,"$count cards sent securely for host approval.",Toast.LENGTH_LONG).show();if(navigationStack.isNotEmpty()&&navigationStack.last()=="custom")navigationStack.removeLast();currentScreen="custom";showCustomCards()}
+        override fun onShareError(message:String){shareStatus=message;Toast.makeText(this@MainActivity,message,Toast.LENGTH_LONG).show();if(currentScreen=="shareHost")showHostShare()}
+    }) }
 
     private fun openScreen(screen:String, render:()->Unit) {
         if(currentScreen=="card" && screen!="card") textToSpeech?.stop()
@@ -108,6 +124,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun goBack() {
         textToSpeech?.stop()
+        if(currentScreen=="shareHost"){cardShareManager.stop();hostQrText="";shareStatus="Choose whether this phone hosts the game or sends cards to a nearby host."}
         if(currentScreen in setOf("spinner","choices","card")) {
             activeTimer?.cancel()
             navigationStack.clear()
@@ -136,6 +153,8 @@ class MainActivity : ComponentActivity() {
             "card" -> currentCard?.let { showCard(it) } ?: showChoices()
             "custom" -> showCustomCards()
             "manage" -> manageCards()
+            "share" -> showCardSharing()
+            "shareHost" -> showHostShare()
             else -> showHome()
         }
     }
@@ -246,7 +265,7 @@ class MainActivity : ComponentActivity() {
         else if(!prefs.getBoolean("premiumWelcomeSeen",false)) { offerAfterPrivacy=true; window.decorView.post { requestFirstOffer() } }
     }
 
-    override fun onDestroy() { activeTimer?.cancel(); textToSpeech?.stop(); textToSpeech?.shutdown(); super.onDestroy() }
+    override fun onDestroy() { activeTimer?.cancel(); textToSpeech?.stop(); textToSpeech?.shutdown(); cardShareManager.stop(); super.onDestroy() }
 
     private fun configureSpeechVoice() {
         val engine=textToSpeech ?: return
@@ -815,7 +834,9 @@ Truth or Dare is a local party game. It does not require an account and does not
 
 Data stored on your device may include player names, gender and interaction preferences, specific-player selections, comfort-zone settings, selected game level, custom cards, gameplay progress, appearance and gameplay settings, and a protected Premium entitlement status. This information is used only to provide the app's features and resume your game.
 
-The app does not sell your information. The developer does not receive or share your locally stored game data. Truth or Dare does not request access to your location, contacts, camera, microphone, Bluetooth, or other nearby devices.
+The app does not sell your information. The developer does not receive your locally stored game data.
+
+If you choose Share custom cards, the app asks for Android nearby-device permissions and uses Google Play services Nearby Connections to discover and connect to another phone. The QR code contains temporary session connection information and an ephemeral public encryption key. Only the custom cards you explicitly select, your entered sender name, and protocol data needed to complete the transfer are sent. Card content is protected again with end-to-end AES-GCM encryption derived from ephemeral ECDH keys, is never sent to a developer-operated server, is shown to the host for approval, and remains in memory only for that game session. The app's QR scanner uses Google Play services Code Scanner and does not request camera permission. Google Play services may collect device, performance, and usage information under Google's privacy policy.
 
 When you choose a Premium plan or restore purchases, the app uses Google Play Billing. Google Play processes the transaction and provides the app with product and purchase status information needed to unlock and acknowledge the purchase. The app does not receive or store your payment card details. A protected Premium status may be cached locally for up to 30 days so paid features can continue working temporarily without internet access.
 
@@ -833,7 +854,7 @@ For privacy questions, use the contact options available through that GitHub pro
 
 If this policy changes, the current text will be provided in the app and on its published privacy-policy page.
 """.trimIndent()
-    private fun showPrivacyPolicy(){ informationPage("Privacy policy",trKey("__privacy_policy_body",privacyText())) }
+    private fun showPrivacyPolicy(){ informationPage("Privacy policy",privacyText()) }
     private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
     private fun showAppInformation(){ informationPage("About app","${tr("App version")}\n${installedVersion()}\n\n${tr("Minimum SDK")}\nAndroid 7.0 · API 24\n\n${tr("Target SDK")}\nAndroid 16 · API 36\n\n${tr("Supported API levels")}\nAPI 24 to API 36") }
     private fun showPrivacyNotice(){
@@ -843,7 +864,7 @@ If this policy changes, the current text will be provided in the app and on its 
         shell.addView(label("Before you start, please read how Truth or Dare handles your data.",13,false,muted).apply { setPadding(0,dp(6),0,dp(8)) })
         shell.addView(label(ruleText("You can revisit the privacy policy in Settings > General Information.","Puedes volver a consultar la política de privacidad en Ajustes > Información general."),12,true,accent).apply{setPadding(0,0,0,dp(10))})
         val scroll=ScrollView(this).apply { setPadding(0,0,dp(2),0) };styleScrollBar(scroll)
-        scroll.addView(label(linkedInformationText(trKey("__privacy_policy_body",privacyText())),13,false,ink).apply { movementMethod=android.text.method.LinkMovementMethod.getInstance();highlightColor=Color.TRANSPARENT;setLineSpacing(dp(5).toFloat(),1f);setPadding(0,0,dp(18),dp(8)) })
+        scroll.addView(label(linkedInformationText(privacyText()),13,false,ink).apply { movementMethod=android.text.method.LinkMovementMethod.getInstance();highlightColor=Color.TRANSPARENT;setLineSpacing(dp(5).toFloat(),1f);setPadding(0,0,dp(18),dp(8)) })
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f).apply { rightMargin=dp(-16) })
         shell.addView(button("Understood",accent,onAccent()){ prefs.edit().putBoolean("privacySeen",true).apply(); dialog.dismiss(); if(!prefs.getBoolean("gameRulesSeen",false))window.decorView.post{showGameRulesNotice()}else continueAfterFirstRun() },lp(-1,dp(54),0))
         dialog.setContentView(shell); dialog.setCancelable(false); dialog.show()
@@ -1024,7 +1045,8 @@ If this policy changes, the current text will be provided in the app and on its 
     private fun nextCard(kind:String):Card {
         val active=players[turn%players.size]
         if(selectedLevel=="mydares") {
-            val source=if(customCards.isNotEmpty()) customCards else decks["soft"].orEmpty()
+            val combined=customCards+sharedSessionCards
+            val source=if(combined.isNotEmpty()) combined else decks["soft"].orEmpty()
             val pool=source.filter { it.kind==kind && (!it.text.contains("{Y}") || eligibleTargets(active).isNotEmpty()) }
             return if(pool.isEmpty()) Card(kind,"No prompt available for the current player preferences.") else pool.random()
         }
@@ -1061,9 +1083,75 @@ If this policy changes, the current text will be provided in the app and on its 
             row.addView(line)
         }
         val addCustom=button("Add a custom truth or dare",accent,onAccent()){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        val share=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;isClickable=true;setPadding(dp(18),dp(15),dp(18),dp(15));background=shape(surface,22,1);setOnClickListener{openScreen("share"){showCardSharing()}} }
+        share.addView(label("Share cards by QR",17,true));share.addView(label("Combine nearby players' custom cards in one private game"+(if(sharedSessionCards.isNotEmpty())" · ${sharedSessionCards.size} received" else ""),12,false,muted).apply{setPadding(0,dp(4),0,0)})
+        root.addView(share,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
         val manage=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; isClickable=true; setPadding(dp(18),dp(15),dp(18),dp(15)); background=shape(surface,22,1); setOnClickListener { openScreen("manage"){manageCards()} } }
         manage.addView(label("Manage your cards",17,true)); manage.addView(label("Import, export, and organize your custom cards",12,false,muted).apply { setPadding(0,dp(4),0,0) })
         root.addView(manage,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
+    }
+    private fun requiredNearbyPermissions():Array<String> = when {
+        Build.VERSION.SDK_INT>=33->arrayOf(android.Manifest.permission.BLUETOOTH_ADVERTISE,android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_SCAN,android.Manifest.permission.NEARBY_WIFI_DEVICES)
+        Build.VERSION.SDK_INT>=31->arrayOf(android.Manifest.permission.BLUETOOTH_ADVERTISE,android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_SCAN)
+        else->arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+    private fun withNearbyPermissions(action:()->Unit){
+        val missing=requiredNearbyPermissions().filter{androidx.core.content.ContextCompat.checkSelfPermission(this,it)!=android.content.pm.PackageManager.PERMISSION_GRANTED}
+        if(missing.isEmpty())action() else {nearbyPermissionAction=action;nearbyPermissionLauncher.launch(missing.toTypedArray())}
+    }
+    private fun showCardSharing(){
+        val root=base();title(root,"Share custom cards")
+        root.addView(label("Bring everyone's custom cards into one game without accounts or a database.",17,false,muted,Gravity.CENTER).apply{setPadding(dp(12),dp(20),dp(12),dp(18))},lp(-1,-2,0))
+        val privacy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=toneOutline(readableGreen());setPadding(dp(18),dp(16),dp(18),dp(16));addView(label("Private by design",17,true,readableGreen()));addView(label("Only cards you select are sent. Transfers are end-to-end encrypted, received cards stay in memory, and the host must approve every batch.",13,false,muted).apply{setPadding(0,dp(5),0,0)})}
+        root.addView(privacy,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        val host=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isClickable=true;background=accentOutline(26);setPadding(dp(18),dp(22),dp(18),dp(22));addView(label("Host a card-sharing session",19,true,accent,Gravity.CENTER));addView(label("Show a QR code and approve cards received from nearby players.",13,false,muted,Gravity.CENTER).apply{setPadding(0,dp(6),0,0)});setOnClickListener{withNearbyPermissions{hostQrText=cardShareManager.startHost();openScreen("shareHost"){showHostShare()}}}}
+        root.addView(host,lp(-1,-2,10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        val join=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isClickable=true;background=shape(surface,26,1);setPadding(dp(18),dp(22),dp(18),dp(22));addView(label("Send cards to a host",19,true,ink,Gravity.CENTER));addView(label("Choose cards, then scan the host's QR code.",13,false,muted,Gravity.CENTER).apply{setPadding(0,dp(6),0,0)});setOnClickListener{if(customCards.isEmpty())Toast.makeText(this@MainActivity,"Create at least one custom card first.",Toast.LENGTH_LONG).show() else showCardSelectionForSharing()}}
+        root.addView(join,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        if(sharedSessionCards.isNotEmpty())root.addView(button("Clear ${sharedSessionCards.size} received session cards",surface,accent){sharedSessionCards.clear();Toast.makeText(this,"Received cards cleared.",Toast.LENGTH_SHORT).show();showCardSharing()}.apply{background=accentOutline(20);setTextColor(accent)},lp(-1,dp(56),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+    }
+    private fun showHostShare(){
+        val root=base();title(root,"Host card sharing")
+        root.addView(label(shareStatus,15,false,muted,Gravity.CENTER).apply{setPadding(dp(12),dp(16),dp(12),dp(12))},lp(-1,-2,0))
+        if(hostQrText.isNotBlank()){
+            val size=min(resources.displayMetrics.widthPixels-dp(80),dp(360))
+            val holder=FrameLayout(this).apply{background=shape(Color.WHITE,28,0);setPadding(dp(14),dp(14),dp(14),dp(14))}
+            holder.addView(ImageView(this).apply{setImageBitmap(createQrBitmap(hostQrText,size-dp(28)));contentDescription="Card sharing QR code"},FrameLayout.LayoutParams(-1,-1))
+            root.addView(holder,lp(size,size,8).apply{gravity=Gravity.CENTER_HORIZONTAL})
+        }
+        root.addView(label("Players scan this code, choose their cards, and send them directly to this phone. You will review every batch before it joins the game.",13,false,muted,Gravity.CENTER).apply{setPadding(dp(16),dp(12),dp(16),dp(12))},lp(-1,-2,0))
+        root.addView(label("${sharedSessionCards.size} approved session cards",16,true,accent,Gravity.CENTER),lp(-1,dp(48),2))
+        root.addView(button("Stop sharing",surface,accent){cardShareManager.stop();hostQrText="";shareStatus="Choose whether this phone hosts the game or sends cards to a nearby host.";goBack()}.apply{background=accentOutline(22);setTextColor(accent)},lp(-1,dp(58),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+    }
+    private fun createQrBitmap(value:String,size:Int):android.graphics.Bitmap{
+        val matrix=com.google.zxing.qrcode.QRCodeWriter().encode(value,com.google.zxing.BarcodeFormat.QR_CODE,size,size)
+        val pixels=IntArray(size*size);for(y in 0 until size)for(x in 0 until size)pixels[y*size+x]=if(matrix[x,y])Color.BLACK else Color.WHITE
+        return android.graphics.Bitmap.createBitmap(size,size,android.graphics.Bitmap.Config.ARGB_8888).apply{setPixels(pixels,0,size,0,0,size,size)}
+    }
+    private fun showCardSelectionForSharing(){
+        val dialog=Dialog(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);setPadding(dp(20),dp(20),dp(20),dp(18))}
+        shell.addView(label("Choose cards to send",22,true));shell.addView(label("Only selected cards leave this phone. Maximum 200 cards per transfer.",13,false,muted).apply{setPadding(0,dp(5),0,dp(10))})
+        val sender=EditText(this).apply{hint="Your name";setTextColor(ink);setHintTextColor(muted);textSize=16f;background=shape(this@MainActivity.background,16,1);setPadding(dp(14),0,dp(14),0)};shell.addView(sender,lp(-1,dp(52),4))
+        val selected=customCards.indices.take(200).toMutableSet();val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        customCards.take(200).forEachIndexed{i,c->list.addView(CheckBox(this).apply{text="${c.kind.uppercase()} · ${c.text}";setTextColor(ink);textSize=13f;isChecked=true;buttonTintList=android.content.res.ColorStateList.valueOf(accent);setOnCheckedChangeListener{_,checked->if(checked)selected.add(i)else selected.remove(i)}},lp(-1,-2,2))}
+        shell.addView(ScrollView(this).apply{addView(list)},lp(-1,dp(300),8))
+        val actions=LinearLayout(this).apply{gravity=Gravity.END};actions.addView(button("Cancel",surface,muted){dialog.dismiss()},LinearLayout.LayoutParams(0,dp(54),.42f).apply{rightMargin=dp(6)});actions.addView(button("Scan host QR",accent,onAccent()){if(selected.isEmpty()){Toast.makeText(this,"Select at least one card.",Toast.LENGTH_SHORT).show();return@button};val cards=selected.sorted().map{customCards[it]}.map{SharedCard(it.kind,it.text)};dialog.dismiss();withNearbyPermissions{scanHostQr(sender.text.toString(),cards)}},LinearLayout.LayoutParams(0,dp(54),.58f).apply{leftMargin=dp(6)});shell.addView(actions)
+        dialog.setContentView(shell);dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(28),WindowManager.LayoutParams.WRAP_CONTENT);attributes=attributes.apply{dimAmount=.48f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
+    }
+    private fun scanHostQr(sender:String,cards:List<SharedCard>){
+        val options=com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder().setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
+        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(this,options).startScan()
+            .addOnSuccessListener{barcode->val value=barcode.rawValue;if(value.isNullOrBlank())Toast.makeText(this,"That QR code was empty.",Toast.LENGTH_LONG).show() else cardShareManager.join(value,sender,cards)}
+            .addOnFailureListener{Toast.makeText(this,"Could not scan the QR code: ${it.localizedMessage ?: "scanner unavailable"}",Toast.LENGTH_LONG).show()}
+    }
+    private fun reviewIncomingBatch(batch:IncomingCardBatch){
+        if(isFinishing||isDestroyed){cardShareManager.resolve(batch);return}
+        val dialog=Dialog(this);val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;background=shape(surface,28,1);setPadding(dp(20),dp(20),dp(20),dp(18))}
+        shell.addView(label("Review ${batch.sender}'s cards",22,true));shell.addView(label("${batch.cards.size} encrypted cards arrived. Approve them only if you recognize this player.",13,false,muted).apply{setPadding(0,dp(5),0,dp(10))})
+        val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};batch.cards.forEach{c->list.addView(label("${c.kind.uppercase()} · ${c.text}",13,false,ink).apply{background=shape(this@MainActivity.background,14,1);setPadding(dp(12),dp(10),dp(12),dp(10))},lp(-1,-2,3))};shell.addView(ScrollView(this).apply{addView(list)},lp(-1,dp(320),8))
+        fun finish(accept:Boolean){if(accept){batch.cards.forEach{received->if(sharedSessionCards.none{it.kind==received.kind&&it.text==received.text})sharedSessionCards.add(Card(received.kind,received.text))};Toast.makeText(this,"${batch.cards.size} cards approved for this session.",Toast.LENGTH_LONG).show()};cardShareManager.resolve(batch);dialog.dismiss();if(currentScreen=="shareHost")showHostShare()}
+        val actions=LinearLayout(this).apply{gravity=Gravity.END};actions.addView(button("Reject",surface,Color.rgb(211,47,47)){finish(false)}.apply{background=toneOutline(Color.rgb(211,47,47));setTextColor(Color.rgb(211,47,47))},LinearLayout.LayoutParams(0,dp(54),.42f).apply{rightMargin=dp(6)});actions.addView(button("Approve",surface,readableGreen()){finish(true)}.apply{background=toneOutline(readableGreen());setTextColor(readableGreen())},LinearLayout.LayoutParams(0,dp(54),.58f).apply{leftMargin=dp(6)});shell.addView(actions)
+        dialog.setOnCancelListener{cardShareManager.resolve(batch)};dialog.setContentView(shell);dialog.show();dialog.window?.apply{setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));setLayout(resources.displayMetrics.widthPixels-dp(28),WindowManager.LayoutParams.WRAP_CONTENT);attributes=attributes.apply{dimAmount=.5f};addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)}
     }
     private fun editCustom(index:Int){
         val old=if(index>=0)customCards[index] else null

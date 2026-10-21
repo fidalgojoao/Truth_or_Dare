@@ -18,9 +18,15 @@ This information is used only to provide the app's features and allow a game to 
 
 ## Data collection and sharing
 
-Truth or Dare does not sell personal information. The developer does not use advertising or analytics SDKs and does not operate a server that collects gameplay information.
+Truth or Dare does not sell personal information and does not operate a server that collects gameplay information.
 
-Truth or Dare does not request access to your location, contacts, camera, microphone, Bluetooth, or other nearby devices.
+## Nearby custom-card sharing
+
+If you choose **Share custom cards**, the app requests Android nearby-device permissions and uses Google Play services Nearby Connections to discover and connect directly to another phone. On older Android versions, Android presents the required nearby discovery permission as location access. The app does not collect or transmit your physical location.
+
+The host's QR code contains temporary session connection information and an ephemeral public encryption key. The app sends only the custom cards you explicitly select, the sender name you enter, and protocol data needed to complete the transfer. Card content is protected with an additional end-to-end encryption layer using ephemeral ECDH P-256 keys and AES-256-GCM. Received cards are shown to the host for approval, kept in memory for the current game session, and are not sent to a developer-operated server.
+
+QR scanning uses Google Play services Code Scanner, which performs scanning through Google Play services and lets the app scan without requesting camera permission. Google Play services Nearby and Code Scanner may collect device, performance, diagnostics, and usage information under Google's privacy policy. This service information does not include the app's separately encrypted custom-card content.
 
 ## Google Play Billing
 

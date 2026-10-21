@@ -910,13 +910,41 @@ If this policy changes, the current text will be provided in the app and on its 
     }
     private fun showTurnOrderSetup(){
         resetOrderedTurnIndices()
-        val animationFrom=orderAnimationFrom;val animationTo=orderAnimationTo
         val start=button(ruleText("Start game  →","Empezar partida  →"),accent,onAccent()){
             if(orderedTurnIndices.isEmpty())return@button
             playMode="ordered";orderedTurnPosition=0;turn=orderedTurnIndices.first();round=1;hasActiveTurn=true;currentScreen="choices";showChoices()
         }.apply{textSize=17f}
         val root=base(dock=start);title(root,ruleText("Taking turns","Por turnos"));divider(root,12)
         root.addView(label(ruleText("Touch and hold the four-line handle, then drag players into the order you want. The order repeats after the last player.","Mantén pulsado el control de cuatro líneas y arrastra a los jugadores al orden que quieras. El orden se repite después del último jugador."),14,false,muted,Gravity.CENTER).apply{setPadding(0,0,0,dp(10));setLineSpacing(dp(2).toFloat(),1f)},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        val holders=mutableListOf<FrameLayout>()
+        val rows=mutableListOf<LinearLayout>()
+        val topMarkers=mutableListOf<View>()
+        val bottomMarkers=mutableListOf<View>()
+        var previewDestination=-1
+        fun clearPreview(animate:Boolean=true){
+            previewDestination=-1
+            topMarkers.forEach{it.visibility=View.INVISIBLE};bottomMarkers.forEach{it.visibility=View.INVISIBLE}
+            holders.forEach{holder->holder.animate().cancel();if(animate)holder.animate().translationY(0f).setDuration(150).setInterpolator(DecelerateInterpolator()).start()else holder.translationY=0f}
+        }
+        fun previewInsertion(from:Int,target:Int,after:Boolean){
+            if(from !in orderedTurnIndices.indices)return
+            var insertion=target+if(after)1 else 0
+            if(from<insertion)insertion--
+            val destination=insertion.coerceIn(0,orderedTurnIndices.lastIndex)
+            topMarkers.forEach{it.visibility=View.INVISIBLE};bottomMarkers.forEach{it.visibility=View.INVISIBLE}
+            (if(after)bottomMarkers[target]else topMarkers[target]).apply{visibility=View.VISIBLE;bringToFront()}
+            if(previewDestination==destination)return
+            previewDestination=destination
+            val slot=(holders.firstOrNull{it.height>0}?.height?:dp(76)).toFloat()
+            holders.forEachIndexed{index,holder->
+                val offset=when{
+                    destination<from&&index in destination until from->slot
+                    destination>from&&index in (from+1)..destination->-slot
+                    else->0f
+                }
+                holder.animate().cancel();holder.animate().translationY(offset).setDuration(170).setInterpolator(DecelerateInterpolator()).start()
+            }
+        }
         orderedTurnIndices.forEachIndexed{position,playerIndex->
             val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(surface,20,1);setPadding(dp(12),dp(10),dp(10),dp(10))}
             row.addView(label("${position+1}",15,true,accent,Gravity.CENTER).apply{background=accentOutline(21)},lp(dp(42),dp(42),0).apply{rightMargin=dp(12)})
@@ -924,19 +952,21 @@ If this policy changes, the current text will be provided in the app and on its 
             val handle=object:View(this){
                 private val linePaint=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=muted;strokeWidth=dp(3).toFloat();strokeCap=Paint.Cap.ROUND}
                 override fun onDraw(canvas:Canvas){super.onDraw(canvas);val center=height/2f;for(i in 0..3){val y=center+(i-1.5f)*dp(6);canvas.drawLine(dp(11).toFloat(),y,(width-dp(11)).toFloat(),y,linePaint)}}
-            }.apply{contentDescription=ruleText("Touch and hold to reorder","Mantén pulsado para reordenar");isLongClickable=true;setOnLongClickListener{performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);val started=startDragAndDrop(android.content.ClipData.newPlainText("player-order",position.toString()),View.DragShadowBuilder(row),position,0);if(started)row.alpha=.28f;started}}
+            }.apply{contentDescription=ruleText("Touch and hold to reorder","Mantén pulsado para reordenar");isLongClickable=true;setOnLongClickListener{performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);val started=startDragAndDrop(android.content.ClipData.newPlainText("player-order",position.toString()),View.DragShadowBuilder(row),position,0);if(started){row.alpha=0f;row.bringToFront()};started}}
             row.addView(handle,lp(dp(52),dp(52),0))
-            row.setOnDragListener{_,event->when(event.action){
+            val holder=FrameLayout(this)
+            holder.addView(row,FrameLayout.LayoutParams(-1,-2).apply{topMargin=dp(6);bottomMargin=dp(6)})
+            fun marker(gravity:Int)=View(this).apply{visibility=View.INVISIBLE;background=GradientDrawable().apply{setColor(accent);cornerRadius=dp(2).toFloat()}}.also{holder.addView(it,FrameLayout.LayoutParams(-1,dp(4),gravity).apply{leftMargin=dp(14);rightMargin=dp(14)})}
+            val topMarker=marker(Gravity.TOP);val bottomMarker=marker(Gravity.BOTTOM)
+            holders.add(holder);rows.add(row);topMarkers.add(topMarker);bottomMarkers.add(bottomMarker)
+            holder.setOnDragListener{_,event->when(event.action){
                 android.view.DragEvent.ACTION_DRAG_STARTED->event.localState is Int
-                android.view.DragEvent.ACTION_DRAG_ENTERED->{row.background=accentOutline(20);true}
-                android.view.DragEvent.ACTION_DRAG_LOCATION->{val offset=if(event.y>row.height/2f)-dp(8).toFloat() else dp(8).toFloat();row.animate().translationY(offset).setDuration(110).start();true}
-                android.view.DragEvent.ACTION_DRAG_EXITED->{row.animate().translationY(0f).setDuration(110).start();row.background=shape(surface,20,1);true}
-                android.view.DragEvent.ACTION_DROP->{val from=event.localState as? Int;if(from!=null&&from in orderedTurnIndices.indices){var insertion=position+if(event.y>row.height/2f)1 else 0;if(from<insertion)insertion--;val destination=insertion.coerceIn(0,orderedTurnIndices.lastIndex);if(destination!=from){val moved=orderedTurnIndices.removeAt(from);orderedTurnIndices.add(destination,moved);orderAnimationFrom=from;orderAnimationTo=destination;showTurnOrderSetup()}};true}
-                android.view.DragEvent.ACTION_DRAG_ENDED->{row.alpha=1f;row.animate().translationY(0f).setDuration(110).start();row.background=shape(surface,20,1);true}
+                android.view.DragEvent.ACTION_DRAG_LOCATION->{val from=event.localState as? Int;if(from!=null)previewInsertion(from,position,event.y>holder.height/2f);true}
+                android.view.DragEvent.ACTION_DROP->{val from=event.localState as? Int;if(from!=null&&from in orderedTurnIndices.indices){var insertion=position+if(event.y>holder.height/2f)1 else 0;if(from<insertion)insertion--;val destination=insertion.coerceIn(0,orderedTurnIndices.lastIndex);if(destination!=from){val moved=orderedTurnIndices.removeAt(from);orderedTurnIndices.add(destination,moved);clearPreview(false);showTurnOrderSetup()}};true}
+                android.view.DragEvent.ACTION_DRAG_ENDED->{rows.forEach{it.alpha=1f};clearPreview();true}
                 else->true
             }}
-            root.addView(row,lp(-1,-2,4).apply{leftMargin=dp(16);rightMargin=dp(16)})
-            if(animationFrom>=0&&animationTo>=0){val slot=dp(70).toFloat();val offset=when{position==animationTo->(animationFrom-animationTo)*slot;animationFrom<animationTo&&position in animationFrom until animationTo->slot;animationFrom>animationTo&&position in (animationTo+1)..animationFrom->-slot;else->0f};if(offset!=0f){row.translationY=offset;if(position==animationTo){row.alpha=.82f;row.scaleX=1.02f;row.scaleY=1.02f};row.post{row.animate().translationY(0f).alpha(1f).scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(DecelerateInterpolator()).start()}}}
+            root.addView(holder,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         }
         orderAnimationFrom=-1;orderAnimationTo=-1
     }

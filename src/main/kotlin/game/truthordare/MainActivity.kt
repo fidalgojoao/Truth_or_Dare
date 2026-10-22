@@ -678,20 +678,24 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showSettings() {
-        val root=base(); title(root,"Settings")
-        val searchShell=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL;background=shape(surface,24,1);setPadding(dp(14),0,dp(8),0) }
+        val root=base(scroll=false);title(root,"Settings",horizontalInset=0)
+        val stage=FrameLayout(this)
+        root.addView(stage,LinearLayout.LayoutParams(-1,0,1f))
+        val content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(0,0,0,dp(16))}
+        val contentScroll=ScrollView(this).apply{isFillViewport=true;clipToPadding=false;setPadding(0,dp(72),0,0);addView(content)}
+        styleScrollBar(contentScroll)
+        stage.addView(contentScroll,FrameLayout.LayoutParams(-1,-1))
+        val searchShell=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL;background=shape(surface,24,1);setPadding(dp(14),0,dp(8),0);elevation=dp(6).toFloat() }
         searchShell.addView(ImageView(this).apply{setImageResource(android.R.drawable.ic_menu_search);setColorFilter(accent,android.graphics.PorterDuff.Mode.SRC_IN);contentDescription=settingsSearchText("Search settings")},lp(dp(28),dp(28),0))
         val search=EditText(this).apply { hint=settingsSearchText("Search settings");setSingleLine(true);textSize=16f;setTextColor(ink);setHintTextColor(muted);background=null;setPadding(dp(10),0,dp(6),0);imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH }
         searchShell.addView(search,LinearLayout.LayoutParams(0,dp(56),1f))
         val clear=label("×",25,false,muted,Gravity.CENTER).apply{contentDescription=settingsSearchText("Clear search");visibility=View.GONE;isClickable=true;setOnClickListener{search.text.clear();search.requestFocus()}}
         searchShell.addView(clear,lp(dp(42),dp(42),0))
-        root.addView(searchShell,lp(-1,dp(56),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        stage.addView(searchShell,FrameLayout.LayoutParams(-1,dp(56),Gravity.TOP))
         val results=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-        root.addView(results,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
-        val browseLabel=label(settingsSearchText("Browse settings"),12,true,muted).apply{setPadding(dp(20),dp(5),0,dp(7));letterSpacing=.08f}
-        root.addView(browseLabel,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        content.addView(results,lp(-1,-2,0))
         val group=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
-        root.addView(group,lp(-1,-2,0).apply { leftMargin=dp(16); rightMargin=dp(16) })
+        content.addView(group,lp(-1,-2,0))
         val chosenLanguage=selectedLanguage()
         settingsRow(group,"language","Language",languageDisplayName(chosenLanguage),{openScreen("language"){showLanguage()}},28,3,3)
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},3,3,3)
@@ -703,7 +707,6 @@ class MainActivity : ComponentActivity() {
             val query=raw.trim().lowercase(Locale.getDefault())
             val searching=query.isNotEmpty()
             clear.visibility=if(searching)View.VISIBLE else View.GONE
-            browseLabel.visibility=if(searching)View.GONE else View.VISIBLE
             group.visibility=if(searching)View.GONE else View.VISIBLE
             if(!searching)return
             val queryTerms=query.split(Regex("\\s+")).filter{it.isNotBlank()}

@@ -695,6 +695,7 @@ class MainActivity : ComponentActivity() {
             SettingSearchItem("rules:content","Game rules","How to play and keep it respectful","Settings › General Information › Game rules","rules","instructions safety players"),
             SettingSearchItem("privacy:content","Privacy policy","How Truth or Dare handles your data","Settings › General Information › Privacy policy","privacy","data legal security"),
             SettingSearchItem("app_info:content","About app","Version and Android compatibility","Settings › General Information › About app","appInfo","app version sdk api android compatibility"),
+            SettingSearchItem("app_info:rate","Rate this app","Google Play","Settings › General Information › About app","appInfo","review rating stars feedback store"),
             SettingSearchItem("premium:screen","Premium","Compare subscriptions and lifetime access","Settings › Premium","premiumPlans","plans unlock purchase subscription"),
             SettingSearchItem("premium:monthly","Monthly plan","Premium subscription that renews monthly","Settings › Premium","premiumPlans","full app unlock purchase"),
             SettingSearchItem("premium:yearly","Yearly plan","Best-value annual Premium subscription","Settings › Premium","premiumPlans","annual purchase"),
@@ -1086,7 +1087,41 @@ If this policy changes, the current text will be provided in the app and on its 
 """.trimIndent()
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",trKey("__privacy_policy_body",privacyText()),"privacy:content") }
     private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
-    private fun showAppInformation(){ informationPage("About app","${tr("App version")}\n${installedVersion()}\n\n${tr("Minimum SDK")}\nAndroid 7.0 · API 24\n\n${tr("Target SDK")}\nAndroid 16 · API 36\n\n${tr("Supported API levels")}\nAPI 24 to API 36","app_info:content") }
+    private fun openPlayStoreRating(){
+        val listing=Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
+        val playStoreIntent=Intent(Intent.ACTION_VIEW,listing).apply{setPackage("com.android.vending")}
+        runCatching{startActivity(playStoreIntent)}.onFailure{runCatching{startActivity(Intent(Intent.ACTION_VIEW,listing).apply{addCategory(Intent.CATEGORY_BROWSABLE)})}}
+    }
+    private fun showAppInformation(){
+        val root=base();title(root,"About app");divider(root,16)
+        val group=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        root.addView(group,lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        fun addInfoRow(titleText:String,detailText:String,index:Int,lastIndex:Int,highlighted:Boolean=false,onClick:(()->Unit)?=null):View{
+            val tone=readableGreen()
+            val row=LinearLayout(this).apply{
+                orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;minimumHeight=dp(72);setPadding(dp(16),dp(11),dp(14),dp(11))
+                background=if(highlighted)groupedShape(ColorUtils.blendARGB(surface,tone,if(isDark()).20f else .12f),if(index==0)28 else 3,if(index==lastIndex)28 else 3,2,tone)else groupedShape(surface,if(index==0)28 else 3,if(index==lastIndex)28 else 3,1)
+                if(onClick!=null){isClickable=true;isFocusable=true;setOnClickListener{onClick()}}
+            }
+            val copy=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            copy.addView(label(titleText,14,true,if(highlighted)tone else ink))
+            copy.addView(label(detailText,12,false,muted).apply{setPadding(0,dp(4),0,0)})
+            row.addView(copy,LinearLayout.LayoutParams(0,-2,1f))
+            if(onClick!=null)row.addView(label("›",28,false,if(highlighted)tone else muted,Gravity.CENTER),lp(dp(32),dp(48),0))
+            group.addView(row,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=if(index==lastIndex)0 else dp(3)})
+            return row
+        }
+        val details=listOf(
+            tr("Rate this app") to "Google Play",
+            tr("App version") to installedVersion(),
+            tr("Minimum SDK") to "Android 7.0 · API 24",
+            tr("Target SDK") to "Android 16 · API 36",
+            tr("Supported API levels") to "API 24 to API 36"
+        )
+        val rateRow=addInfoRow("★ ${details[0].first}",details[0].second,0,details.lastIndex,true){openPlayStoreRating()}
+        details.drop(1).forEachIndexed{offset,item->addInfoRow(item.first,item.second,offset+1,details.lastIndex)}
+        markSettingTarget(group,"app_info:content");markSettingTarget(rateRow,"app_info:rate")
+    }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)
         val shell=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; background=shape(surface,28,1); clipToOutline=true; setPadding(dp(18),dp(18),dp(18),dp(18)) }

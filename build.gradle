@@ -10,8 +10,8 @@ android {
         applicationId 'game.truthordare'
         minSdk 24
         targetSdk 36
-        versionCode 146
-        versionName '0.5.68'
+        versionCode 147
+        versionName '0.5.69'
     }
     signingConfigs {
         release {

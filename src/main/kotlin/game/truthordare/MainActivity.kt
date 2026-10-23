@@ -1026,17 +1026,20 @@ class MainActivity : ComponentActivity() {
     )
     private fun gameRulesPanel():LinearLayout = LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL
-        gameRuleItems().forEachIndexed { index,rule ->
+        val rules=gameRuleItems()
+        rules.forEachIndexed { index,rule ->
             val card=LinearLayout(this@MainActivity).apply {
                 orientation=LinearLayout.VERTICAL
                 setPadding(dp(14),dp(12),dp(14),dp(12))
                 val safetyGreen=readableGreen()
-                background=if(rule.highlighted) shape(ColorUtils.blendARGB(surface,safetyGreen,if(isDark()).18f else .10f),18,2,safetyGreen) else shape(surface,18,1)
+                val topRadius=if(index==0)28 else 3
+                val bottomRadius=if(index==rules.lastIndex)28 else 3
+                background=if(rule.highlighted) groupedShape(ColorUtils.blendARGB(surface,safetyGreen,if(isDark()).18f else .10f),topRadius,bottomRadius,2,safetyGreen) else groupedShape(surface,topRadius,bottomRadius,1)
                 val translatedTitle=tr(rule.title)
                 addView(label(if(rule.premium)"PREMIUM · $translatedTitle" else translatedTitle,14,true,if(rule.highlighted)safetyGreen else if(rule.premium)accent else ink))
                 addView(label(tr(rule.detail),12,false,muted).apply{setPadding(0,dp(5),0,0);setLineSpacing(dp(2).toFloat(),1f)})
             }
-            addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=if(index==gameRuleItems().lastIndex)0 else dp(7)})
+            addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=if(index==rules.lastIndex)0 else dp(3)})
         }
     }
     private fun showGameRules(){

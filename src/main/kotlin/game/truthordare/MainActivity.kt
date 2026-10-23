@@ -466,13 +466,29 @@ class MainActivity : ComponentActivity() {
             if(scroll)setBackgroundColor(Color.TRANSPARENT)else background=appBackgroundDrawable()
             setPadding(if(scroll) 0 else dp(16), 0, if(scroll) 0 else dp(16), dp(16))
         }
-        if (!scroll) {
+        if (!scroll && dock == null) {
             ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
                 val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 view.setPadding(bars.left+dp(16),bars.top+dp(4),bars.right+dp(16),bars.bottom+dp(16))
                 insets
             }
             setContentView(root); return root
+        }
+        if (!scroll) {
+            val fixedDock=dock!!
+            val dockHeight=max(dp(66),fixedDock.minimumHeight)
+            val frame=FrameLayout(this).apply {
+                background=appBackgroundDrawable()
+                addView(root,FrameLayout.LayoutParams(-1,-1))
+                addView(fixedDock,FrameLayout.LayoutParams(-1,dockHeight,Gravity.BOTTOM).apply{setMargins(dp(dockMargin),0,dp(dockMargin),0)})
+            }
+            ViewCompat.setOnApplyWindowInsetsListener(frame){_,insets->
+                val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                root.setPadding(bars.left+dp(16),bars.top+dp(4),bars.right+dp(16),bars.bottom+dockHeight+dp(16))
+                (fixedDock.layoutParams as FrameLayout.LayoutParams).apply{bottomMargin=bars.bottom+dp(8);fixedDock.layoutParams=this}
+                insets
+            }
+            setContentView(frame);return root
         }
         val sv = ScrollView(this).apply { isFillViewport = true; clipToPadding = true; background=appBackgroundDrawable(); addView(root) }; styleScrollBar(sv,!hideScrollBar)
         if (dock == null) {
@@ -621,7 +637,7 @@ class MainActivity : ComponentActivity() {
         val customSwitch=expressiveToggle(customCardsEnabled&&premium,premium){enabled->customCardsEnabled=enabled;saveState();showHome()}
         if(customLocked){customSwitch.isClickable=true;customSwitch.isFocusable=true;customSwitch.setOnClickListener{showPremium()};customSwitch.getChildAt(0).setOnClickListener{showPremium()}}
         custom.addView(customSwitch,lp(dp(64),dp(40),0))
-        levels.addView(custom,lp(-1,dp(68),4))
+        levels.addView(custom,lp(-1,dp(68),0).apply{topMargin=dp(4);bottomMargin=dp(4)})
         }
         if(!premium && levelsPanelExpanded) root.addView(label("Hot, Naughty and My custom cards unlock with Premium.",12,false,muted,Gravity.CENTER).apply{setPadding(0,dp(3),0,0)},lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })
     }
@@ -1285,23 +1301,32 @@ If this policy changes, the current text will be provided in the app and on its 
     }
     private fun showCustomCards(){
         val destructive=Color.rgb(211,47,47)
-        val actionDock=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; minimumHeight=dp(128) }
+        val actionDock=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; minimumHeight=dp(120) }
         val transferActions=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
-        transferActions.addView(button("Import cards",accent,onAccent()){importCards()},LinearLayout.LayoutParams(0,dp(58),1f).apply{rightMargin=dp(4)})
-        transferActions.addView(button("Export cards",accent,onAccent()){exportCards()},LinearLayout.LayoutParams(0,dp(58),1f).apply{leftMargin=dp(4)})
+        val importButton=button("Import cards",accent,onAccent()){importCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(dp(22).toFloat(),dp(22).toFloat(),0f,0f,0f,0f,0f,0f);setStroke(dp(1),accent)};setTextColor(accent)}
+        val exportButton=button("Export cards",accent,onAccent()){exportCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(0f,0f,dp(22).toFloat(),dp(22).toFloat(),0f,0f,0f,0f);setStroke(dp(1),accent)};setTextColor(accent)}
+        transferActions.addView(importButton,LinearLayout.LayoutParams(0,dp(58),1f))
+        transferActions.addView(exportButton,LinearLayout.LayoutParams(0,dp(58),1f))
         actionDock.addView(transferActions,lp(-1,dp(58),0))
-        actionDock.addView(button("Delete all cards",surface,destructive){customCards.clear();saveState();showCustomCards()}.apply{background=toneOutline(destructive);setTextColor(destructive)},lp(-1,dp(62),8))
-        val root=base(dock=actionDock,dockFollowsIme=false); title(root,"My custom cards")
-        root.addView(label("Custom cards are mixed into every matching level.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        actionDock.addView(button("Delete all cards",destructive,Color.WHITE){customCards.clear();saveState();showCustomCards()}.apply{background=GradientDrawable().apply{setColor(destructive);cornerRadii=floatArrayOf(0f,0f,0f,0f,dp(22).toFloat(),dp(22).toFloat(),dp(22).toFloat(),dp(22).toFloat())};setTextColor(Color.WHITE)},lp(-1,dp(62),0))
+        val root=base(scroll=false,dock=actionDock,dockFollowsIme=false); title(root,"My custom cards",horizontalInset=0)
+        root.addView(label("Custom cards are mixed into every matching level.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))},lp(-1,-2,0))
+        val addCustom=button("Add a custom card",accent,onAccent()){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),0).apply{bottomMargin=dp(10)})
+        val cardsList=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(10),dp(8),dp(10),dp(8))}
         customCards.forEachIndexed{i,c->
-            val row=card(root,6); val line=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
-            line.addView(label("${tr(c.kind.replaceFirstChar{it.titlecase()})} · ${levelName(c.level)}",12,true,accent),LinearLayout.LayoutParams(dp(150),-2))
-            line.addView(label(c.text,17,false,ink),LinearLayout.LayoutParams(0,-2,1f))
-            line.addView(cardAction(R.drawable.ic_edit,"Edit card"){editCustom(i)},lp(dp(48),dp(48),0))
-            line.addView(cardAction(R.drawable.ic_delete,"Delete card"){customCards.removeAt(i);saveState();showCustomCards()},lp(dp(48),dp(48),3))
-            row.addView(line)
+            val row=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL;background=shape(surface,22,1);setPadding(dp(12),dp(12),dp(10),dp(12))}
+            val metadata=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            metadata.addView(label(c.kind.replaceFirstChar{it.titlecase()},12,true,accent))
+            metadata.addView(label(levelName(c.level),11,false,muted).apply{setPadding(0,dp(3),0,0)})
+            row.addView(metadata,LinearLayout.LayoutParams(dp(88),-2))
+            row.addView(label(c.text,17,false,ink).apply{setPadding(dp(8),0,dp(6),0)},LinearLayout.LayoutParams(0,-2,1f))
+            row.addView(cardAction(R.drawable.ic_edit,"Edit card"){editCustom(i)},lp(dp(48),dp(48),0))
+            row.addView(cardAction(R.drawable.ic_delete,"Delete card"){customCards.removeAt(i);saveState();showCustomCards()},lp(dp(48),dp(48),0).apply{leftMargin=dp(3)})
+            cardsList.addView(row,lp(-1,-2,0).apply{bottomMargin=dp(6)})
         }
-        val addCustom=button("Add a custom card",accent,onAccent()){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
+        if(customCards.isEmpty())cardsList.addView(label("No cards found",15,true,muted,Gravity.CENTER).apply{setPadding(dp(12),dp(28),dp(12),dp(28))},lp(-1,-2,0))
+        val cardsScroll=ScrollView(this).apply{isFillViewport=true;background=shape(surface,28,1);clipToPadding=false;addView(cardsList);styleScrollBar(this)}
+        root.addView(cardsScroll,LinearLayout.LayoutParams(-1,0,1f))
     }
     private fun editCustom(index:Int){
         val old=if(index>=0)customCards[index] else null

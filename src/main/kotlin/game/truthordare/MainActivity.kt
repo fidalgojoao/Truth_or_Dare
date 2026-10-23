@@ -696,6 +696,8 @@ class MainActivity : ComponentActivity() {
             SettingSearchItem("privacy:content","Privacy policy","How Truth or Dare handles your data","Settings › General Information › Privacy policy","privacy","data legal security"),
             SettingSearchItem("app_info:content","About app","Version and Android compatibility","Settings › General Information › About app","appInfo","app version sdk api android compatibility"),
             SettingSearchItem("app_info:rate","Rate this app","Google Play","Settings › General Information › About app","appInfo","review rating stars feedback store"),
+            SettingSearchItem("app_info:version_code","Version code","Android build number","Settings › General Information › About app","appInfo","build release number"),
+            SettingSearchItem("app_info:package","Package name","Application identifier","Settings › General Information › About app","appInfo","application id identifier"),
             SettingSearchItem("premium:screen","Premium","Compare subscriptions and lifetime access","Settings › Premium","premiumPlans","plans unlock purchase subscription"),
             SettingSearchItem("premium:monthly","Monthly plan","Premium subscription that renews monthly","Settings › Premium","premiumPlans","full app unlock purchase"),
             SettingSearchItem("premium:yearly","Yearly plan","Best-value annual Premium subscription","Settings › Premium","premiumPlans","annual purchase"),
@@ -1087,6 +1089,8 @@ If this policy changes, the current text will be provided in the app and on its 
 """.trimIndent()
     private fun showPrivacyPolicy(){ informationPage("Privacy policy",trKey("__privacy_policy_body",privacyText()),"privacy:content") }
     private fun installedVersion():String = runCatching { packageManager.getPackageInfo(packageName,0).versionName ?: "Unknown" }.getOrDefault("Unknown")
+    @Suppress("DEPRECATION")
+    private fun installedVersionCode():Long = runCatching { val info=packageManager.getPackageInfo(packageName,0);if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P)info.longVersionCode else info.versionCode.toLong() }.getOrDefault(0L)
     private fun openPlayStoreRating(){
         val listing=Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
         val playStoreIntent=Intent(Intent.ACTION_VIEW,listing).apply{setPackage("com.android.vending")}
@@ -1112,15 +1116,17 @@ If this policy changes, the current text will be provided in the app and on its 
             return row
         }
         val details=listOf(
-            tr("Rate this app") to "Google Play",
-            tr("App version") to installedVersion(),
-            tr("Minimum SDK") to "Android 7.0 · API 24",
-            tr("Target SDK") to "Android 16 · API 36",
-            tr("Supported API levels") to "API 24 to API 36"
+            Triple(tr("Rate this app"),"Google Play","app_info:rate"),
+            Triple(tr("App version"),installedVersion(),"app_info:version"),
+            Triple(tr("Version code"),installedVersionCode().toString(),"app_info:version_code"),
+            Triple(tr("Package name"),packageName,"app_info:package"),
+            Triple(tr("Minimum SDK"),"Android 7.0 · API 24","app_info:min_sdk"),
+            Triple(tr("Target SDK"),"Android 16 · API 36","app_info:target_sdk"),
+            Triple(tr("Supported API levels"),"API 24 to API 36","app_info:supported_api")
         )
         val rateRow=addInfoRow("★ ${details[0].first}",details[0].second,0,details.lastIndex,true){openPlayStoreRating()}
-        details.drop(1).forEachIndexed{offset,item->addInfoRow(item.first,item.second,offset+1,details.lastIndex)}
-        markSettingTarget(group,"app_info:content");markSettingTarget(rateRow,"app_info:rate")
+        details.drop(1).forEachIndexed{offset,item->markSettingTarget(addInfoRow(item.first,item.second,offset+1,details.lastIndex),item.third)}
+        markSettingTarget(group,"app_info:content");markSettingTarget(rateRow,details[0].third)
     }
     private fun showPrivacyNotice(){
         val dialog=Dialog(this)

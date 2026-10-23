@@ -139,7 +139,6 @@ class MainActivity : ComponentActivity() {
             "spinner" -> showHome()
             "card" -> currentCard?.let { showCard(it) } ?: showChoices()
             "custom" -> showCustomCards()
-            "manage" -> manageCards()
             else -> showHome()
         }
     }
@@ -614,7 +613,7 @@ class MainActivity : ComponentActivity() {
         val customNavigation=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL;isClickable=true;isFocusable=true;setOnClickListener { if(customLocked)showPremium() else openScreen("custom"){showCustomCards()} } }
         val customCopy=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         customCopy.addView(label("My custom cards",13,true,if(customLocked)muted else ink).apply{textSize=13.65f})
-        customCopy.addView(label(if(customLocked)"Premium  🔒" else if(customCardsEnabled)"Enabled for matching levels" else "Turn on to mix these cards into every level",10,false,muted).apply{setPadding(0,dp(2),0,0);maxLines=2})
+        customCopy.addView(label(if(customLocked)"Premium  🔒" else if(customCardsEnabled)"Enabled for matching levels" else "Turn on to mix these cards into every level",11,false,muted).apply{textSize=11.55f;setPadding(0,dp(2),0,0);maxLines=2})
         customNavigation.addView(customCopy,weight(1f))
         customNavigation.addView(label("›",28,false,if(customLocked)muted else accent,Gravity.CENTER),lp(dp(42),dp(42),0))
         custom.addView(customNavigation,LinearLayout.LayoutParams(0,-1,1f))
@@ -680,12 +679,12 @@ class MainActivity : ComponentActivity() {
             SettingSearchItem("rules:content","Game rules","How to play and keep it respectful","Settings › General Information › Game rules","rules","instructions safety players"),
             SettingSearchItem("privacy:content","Privacy policy","How Truth or Dare handles your data","Settings › General Information › Privacy policy","privacy","data legal security"),
             SettingSearchItem("app_info:content","About app","Version and Android compatibility","Settings › General Information › About app","appInfo","app version sdk api android compatibility"),
-            SettingSearchItem("premium:screen","Premium plans","Compare subscriptions and lifetime access","Settings › General Information › Premium plans","premiumPlans","unlock purchase subscription"),
-            SettingSearchItem("premium:monthly","Monthly plan","Premium subscription that renews monthly","Settings › General Information › Premium plans","premiumPlans","full app unlock purchase"),
-            SettingSearchItem("premium:yearly","Yearly plan","Best-value annual Premium subscription","Settings › General Information › Premium plans","premiumPlans","annual purchase"),
-            SettingSearchItem("premium:lifetime","Lifetime plan","One-time Premium purchase","Settings › General Information › Premium plans","premiumPlans","forever permanent"),
-            SettingSearchItem("premium:continue","Continue purchase","Continue with the selected Premium plan","Settings › General Information › Premium plans","premiumPlans","buy subscribe"),
-            SettingSearchItem("premium:restore","Restore purchases","Restore an existing Premium purchase","Settings › General Information › Premium plans","premiumPlans","recover subscription")
+            SettingSearchItem("premium:screen","Premium","Compare subscriptions and lifetime access","Settings › Premium","premiumPlans","plans unlock purchase subscription"),
+            SettingSearchItem("premium:monthly","Monthly plan","Premium subscription that renews monthly","Settings › Premium","premiumPlans","full app unlock purchase"),
+            SettingSearchItem("premium:yearly","Yearly plan","Best-value annual Premium subscription","Settings › Premium","premiumPlans","annual purchase"),
+            SettingSearchItem("premium:lifetime","Lifetime plan","One-time Premium purchase","Settings › Premium","premiumPlans","forever permanent"),
+            SettingSearchItem("premium:continue","Continue purchase","Continue with the selected Premium plan","Settings › Premium","premiumPlans","buy subscribe"),
+            SettingSearchItem("premium:restore","Restore purchases","Restore an existing Premium purchase","Settings › Premium","premiumPlans","recover subscription")
         )
         (listOf("system")+supportedLanguages).forEach { code ->
             val display=languageDisplayName(code)
@@ -766,6 +765,7 @@ class MainActivity : ComponentActivity() {
         settingsRow(group,"appearance","Appearance","Themes and colors",{openScreen("appearance"){showAppearance()}},3,3,3)
         settingsRow(group,"gameplay","Gameplay","Rules and preferences",{openScreen("gameplay"){showGameplay()}},3,3,3)
         settingsRow(group,"help","Help","Support tickets, feature requests",{openScreen("help"){showHelp()}},3,3,3)
+        if(!premium) settingsRow(group,"premium","Premium","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},3,3,3)
         settingsRow(group,"about","General Information","Privacy policy, Game rules, App info",{openScreen("about"){showAbout()}},3,28,3)
         fun renderResults(raw:String){
             results.removeAllViews()
@@ -965,14 +965,10 @@ class MainActivity : ComponentActivity() {
         markSettingTarget(group,"about:list")
         val rulesRow=settingsRow(group,"◆","Game rules","How to play and keep it respectful",{openScreen("rules"){showGameRules()}},28,3,3,showArrow=false)
         val privacyRow=settingsRow(group,"ⓘ","Privacy policy","How Truth or Dare handles your data",{openScreen("privacy"){showPrivacyPolicy()}},3,3,3,showArrow=false)
-        val appInfoRow=settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},3,if(premium)28 else 3,3,showArrow=false)
+        val appInfoRow=settingsRow(group,"✦","About app","Version and Android compatibility",{openScreen("appInfo"){showAppInformation()}},3,28,3,showArrow=false)
         markSettingTarget(rulesRow,"about:rules")
         markSettingTarget(privacyRow,"about:privacy")
         markSettingTarget(appInfoRow,"about:app_info")
-        if(!premium) {
-            val premiumRow=settingsRow(group,"✦","Premium plans","Compare subscriptions and lifetime access",{openScreen("premiumPlans"){showPremiumPlans()}},3,28,3,showArrow=false)
-            markSettingTarget(premiumRow,"about:premium")
-        }
     }    private val privacyPolicyDisplayUrl="github.com/joaofidalgo1998/joaofidalgo1998/blob/main/truth-or-dare-privacy-policy.md"
     private val privacyPolicyUrl="https://$privacyPolicyDisplayUrl"
     private fun linkedInformationText(body:String):android.text.SpannableString {
@@ -1288,7 +1284,14 @@ If this policy changes, the current text will be provided in the app and on its 
         background=shape(surface,15,1); setPadding(dp(12),dp(12),dp(12),dp(12)); setOnClickListener { action() }
     }
     private fun showCustomCards(){
-        val root=base(); title(root,"My custom cards")
+        val destructive=Color.rgb(211,47,47)
+        val actionDock=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; minimumHeight=dp(128) }
+        val transferActions=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
+        transferActions.addView(button("Import cards",accent,onAccent()){importCards()},LinearLayout.LayoutParams(0,dp(58),1f).apply{rightMargin=dp(4)})
+        transferActions.addView(button("Export cards",accent,onAccent()){exportCards()},LinearLayout.LayoutParams(0,dp(58),1f).apply{leftMargin=dp(4)})
+        actionDock.addView(transferActions,lp(-1,dp(58),0))
+        actionDock.addView(button("Delete all cards",surface,destructive){customCards.clear();saveState();showCustomCards()}.apply{background=toneOutline(destructive);setTextColor(destructive)},lp(-1,dp(62),8))
+        val root=base(dock=actionDock,dockFollowsIme=false); title(root,"My custom cards")
         root.addView(label("Custom cards are mixed into every matching level.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)})
         customCards.forEachIndexed{i,c->
             val row=card(root,6); val line=LinearLayout(this).apply{gravity=Gravity.CENTER_VERTICAL}
@@ -1299,9 +1302,6 @@ If this policy changes, the current text will be provided in the app and on its 
             row.addView(line)
         }
         val addCustom=button("Add a custom card",accent,onAccent()){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),10).apply{leftMargin=dp(16);rightMargin=dp(16)})
-        val manage=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; isClickable=true; setPadding(dp(18),dp(15),dp(18),dp(15)); background=shape(surface,22,1); setOnClickListener { openScreen("manage"){manageCards()} } }
-        manage.addView(label("Manage your cards",17,true)); manage.addView(label("Import, export, and organize your custom cards",12,false,muted).apply { setPadding(0,dp(4),0,0) })
-        root.addView(manage,lp(-1,-2,8).apply{leftMargin=dp(16);rightMargin=dp(16)})
     }
     private fun editCustom(index:Int){
         val old=if(index>=0)customCards[index] else null
@@ -1330,7 +1330,6 @@ If this policy changes, the current text will be provided in the app and on its 
         form.addView(actions)
         dialog.setContentView(form); dialog.show(); dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout((resources.displayMetrics.widthPixels*.90f).toInt(),-2); attributes=attributes.apply { dimAmount=.48f }; addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
     }
-    private fun manageCards(){val root=base();title(root,"Manage your cards");root.addView(label("Export, import, or delete your custom truths and dares.",17,false,muted).apply{setPadding(0,dp(20),0,dp(12))},lp(-1,-2,0).apply{leftMargin=dp(16);rightMargin=dp(16)});val destructive=Color.rgb(211,47,47);val delete=button("Delete all cards",surface,destructive){customCards.clear();saveState();showCustomCards()}.apply{background=toneOutline(destructive);setTextColor(destructive)};listOf(button("Export cards",accent,onAccent()){exportCards()},button("Import cards",accent,onAccent()){importCards()},delete).forEach{root.addView(it,lp(-1,dp(62),6).apply{leftMargin=dp(16);rightMargin=dp(16)})}}
     private fun exportCards(){
         exportCardsLauncher.launch("truth-or-dare-cards.json")
     }
@@ -1526,7 +1525,7 @@ If this policy changes, the current text will be provided in the app and on its 
     private fun showPremiumPlans(){
         if(premium){ currentScreen="about"; showAbout(); return }
         queryProducts()
-        val root=base(); title(root,"Premium plans")
+        val root=base(); title(root,"Premium")
         val support=premiumSupportBanner();root.addView(support,lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16);topMargin=dp(16);bottomMargin=dp(10) })
         markSettingTarget(support,"premium:screen")
         root.addView(label("Unlock every level, custom cards, comfort-zone calibration, and gameplay settings.",14,false,muted).apply { setPadding(0,0,0,dp(10)) },lp(-1,-2,0).apply { leftMargin=dp(16);rightMargin=dp(16) })

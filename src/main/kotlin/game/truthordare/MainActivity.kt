@@ -698,6 +698,8 @@ class MainActivity : ComponentActivity() {
             SettingSearchItem("app_info:rate","Rate this app","Google Play","Settings › General Information › About app","appInfo","review rating stars feedback store"),
             SettingSearchItem("app_info:version_code","Version code","Android build number","Settings › General Information › About app","appInfo","build release number"),
             SettingSearchItem("app_info:package","Package name","Application identifier","Settings › General Information › About app","appInfo","application id identifier"),
+            SettingSearchItem("app_info:compile_sdk","Compile SDK version","Android API used to compile the app","Settings › General Information › About app","appInfo","compile build api android"),
+            SettingSearchItem("app_info:max_sdk","Maximum SDK version","Not restricted","Settings › General Information › About app","appInfo","maximum max api android compatibility"),
             SettingSearchItem("premium:screen","Premium","Compare subscriptions and lifetime access","Settings › Premium","premiumPlans","plans unlock purchase subscription"),
             SettingSearchItem("premium:monthly","Monthly plan","Premium subscription that renews monthly","Settings › Premium","premiumPlans","full app unlock purchase"),
             SettingSearchItem("premium:yearly","Yearly plan","Best-value annual Premium subscription","Settings › Premium","premiumPlans","annual purchase"),
@@ -1122,6 +1124,8 @@ If this policy changes, the current text will be provided in the app and on its 
             Triple(tr("Package name"),packageName,"app_info:package"),
             Triple(tr("Minimum SDK"),"Android 7.0 · API 24","app_info:min_sdk"),
             Triple(tr("Target SDK"),"Android 16 · API 36","app_info:target_sdk"),
+            Triple(tr("Compile SDK version"),"Android 16 · API 36","app_info:compile_sdk"),
+            Triple(tr("Maximum SDK version"),tr("Not restricted"),"app_info:max_sdk"),
             Triple(tr("Supported API levels"),"API 24 to API 36","app_info:supported_api")
         )
         val rateRow=addInfoRow("★ ${details[0].first}",details[0].second,0,details.lastIndex,true){openPlayStoreRating()}

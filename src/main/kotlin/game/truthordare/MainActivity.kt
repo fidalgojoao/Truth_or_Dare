@@ -1301,14 +1301,16 @@ If this policy changes, the current text will be provided in the app and on its 
     }
     private fun showCustomCards(){
         val destructive=Color.rgb(211,47,47)
-        val actionDock=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; minimumHeight=dp(120) }
+        val actionDock=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; minimumHeight=dp(123) }
         val transferActions=LinearLayout(this).apply { gravity=Gravity.CENTER_VERTICAL }
-        val importButton=button("Import cards",accent,onAccent()){importCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(dp(22).toFloat(),dp(22).toFloat(),0f,0f,0f,0f,0f,0f);setStroke(dp(1),accent)};setTextColor(accent)}
-        val exportButton=button("Export cards",accent,onAccent()){exportCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(0f,0f,dp(22).toFloat(),dp(22).toFloat(),0f,0f,0f,0f);setStroke(dp(1),accent)};setTextColor(accent)}
+        val smallCorner=dp(3).toFloat();val largeCorner=dp(22).toFloat()
+        val importButton=button("Import cards",accent,onAccent()){importCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(largeCorner,largeCorner,smallCorner,smallCorner,smallCorner,smallCorner,smallCorner,smallCorner);setStroke(dp(1),accent)};setTextColor(accent)}
+        val exportButton=button("Export cards",accent,onAccent()){exportCards()}.apply{background=GradientDrawable().apply{setColor(surface);cornerRadii=floatArrayOf(smallCorner,smallCorner,largeCorner,largeCorner,smallCorner,smallCorner,smallCorner,smallCorner);setStroke(dp(1),accent)};setTextColor(accent)}
         transferActions.addView(importButton,LinearLayout.LayoutParams(0,dp(58),1f))
+        transferActions.addView(Space(this),lp(dp(3),dp(58),0))
         transferActions.addView(exportButton,LinearLayout.LayoutParams(0,dp(58),1f))
         actionDock.addView(transferActions,lp(-1,dp(58),0))
-        actionDock.addView(button("Delete all cards",destructive,Color.WHITE){customCards.clear();saveState();showCustomCards()}.apply{background=GradientDrawable().apply{setColor(destructive);cornerRadii=floatArrayOf(0f,0f,0f,0f,dp(22).toFloat(),dp(22).toFloat(),dp(22).toFloat(),dp(22).toFloat())};setTextColor(Color.WHITE)},lp(-1,dp(62),0))
+        actionDock.addView(button("Delete all cards",destructive,Color.WHITE){customCards.clear();saveState();showCustomCards()}.apply{background=GradientDrawable().apply{setColor(destructive);cornerRadii=floatArrayOf(smallCorner,smallCorner,smallCorner,smallCorner,largeCorner,largeCorner,largeCorner,largeCorner)};setTextColor(Color.WHITE)},lp(-1,dp(62),0).apply{topMargin=dp(3)})
         val root=base(scroll=false,dock=actionDock,dockFollowsIme=false); title(root,"My custom cards",horizontalInset=0)
         root.addView(label("Custom cards are mixed into every matching level.",17,false,muted).apply{setPadding(0,dp(20),0,dp(16))},lp(-1,-2,0))
         val addCustom=button("Add a custom card",accent,onAccent()){editCustom(-1)};root.addView(addCustom,lp(-1,dp(62),0).apply{bottomMargin=dp(10)})
@@ -1325,8 +1327,10 @@ If this policy changes, the current text will be provided in the app and on its 
             cardsList.addView(row,lp(-1,-2,0).apply{bottomMargin=dp(6)})
         }
         if(customCards.isEmpty())cardsList.addView(label("No cards found",15,true,muted,Gravity.CENTER).apply{setPadding(dp(12),dp(28),dp(12),dp(28))},lp(-1,-2,0))
-        val cardsScroll=ScrollView(this).apply{isFillViewport=true;background=shape(surface,28,1);clipToPadding=false;addView(cardsList);styleScrollBar(this)}
-        root.addView(cardsScroll,LinearLayout.LayoutParams(-1,0,1f))
+        val cardsBox=FrameLayout(this).apply{background=shape(surface,28,1);clipToOutline=true}
+        val cardsScroll=ScrollView(this).apply{isFillViewport=true;clipToPadding=true;setPadding(0,0,dp(2),0);addView(cardsList);styleScrollBar(this)}
+        cardsBox.addView(cardsScroll,FrameLayout.LayoutParams(-1,-1))
+        root.addView(cardsBox,LinearLayout.LayoutParams(-1,0,1f))
     }
     private fun editCustom(index:Int){
         val old=if(index>=0)customCards[index] else null
